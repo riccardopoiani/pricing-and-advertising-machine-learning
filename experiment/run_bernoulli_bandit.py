@@ -15,6 +15,7 @@ from utils.folder_management import handle_folder_creation
 from environments.BernoulliDiscreteBanditEnv import BernoulliDiscreteBanditEnv
 from utils.stats.BernoulliDistribution import BernoulliDistribution
 from bandit.discrete.TSBanditBernoulli import TSBanditBernoulli
+from bandit.discrete.UCB1Bandit import UCB1Bandit
 
 N_ARMS = 2
 ARMS_PROBABILITIES_PARAMETERS = [0.8, 0.1]
@@ -49,6 +50,8 @@ def get_bandit(bandit_name: str) -> DiscreteBandit:
     """
     if bandit_name == "TS":
         bandit = TSBanditBernoulli(n_arms=N_ARMS)
+    elif bandit_name == "UCB1":
+        bandit = UCB1Bandit(n_arms=N_ARMS)
     else:
         raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
 
