@@ -1,4 +1,4 @@
-import numpy as np
+from typing import List
 
 
 class DiscreteBandit(object):
@@ -7,11 +7,10 @@ class DiscreteBandit(object):
     """
 
     def __init__(self, n_arms):
-        self.t = np.random.binomial(0, 0)
-        self.n_arms = n_arms
-        self.t = 0
-        self.rewards_per_arm = [[] for _ in range(n_arms)]
-        self.collected_rewards = []
+        self.n_arms: int = n_arms
+        self.t: int = 0
+        self.rewards_per_arm: List = [[] for _ in range(n_arms)]
+        self.collected_rewards: List = []
 
     def update_observations(self, pulled_arm, reward):
         """

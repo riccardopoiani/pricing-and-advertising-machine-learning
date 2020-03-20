@@ -2,18 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ae455b9b-abd8-4a8d-8786-989fe09d50b5" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/advertising/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/bandit/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/bandit/continuous/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/bandit/discrete/DiscreteBandit.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/bandit/discrete/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/experiment/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/requirements" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/stats/ConversionRateProbability.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/stats/Distribution.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/stats/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bandit/discrete/DiscreteBandit.py" beforeDir="false" afterPath="$PROJECT_DIR$/bandit/discrete/DiscreteBandit.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -24,12 +13,8 @@
   <component name="FileEditorManager">
     <leaf>
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/requirements">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="68">
-              <caret line="4" column="5" selection-start-line="4" selection-start-column="5" selection-end-line="4" selection-end-column="5" />
-            </state>
-          </provider>
+        <entry file="file://$PROJECT_DIR$/bandit/discrete/DiscreteBandit.py">
+          <provider selected="true" editor-type-id="text-editor" />
         </entry>
       </file>
     </leaf>
@@ -58,6 +43,7 @@
         <option value="$PROJECT_DIR$/utils/ConversionRateProbability.py" />
         <option value="$PROJECT_DIR$/utils/stats/ConversionRateProbability.py" />
         <option value="$PROJECT_DIR$/requirements" />
+        <option value="$PROJECT_DIR$/bandit/discrete/DiscreteBandit.py" />
       </list>
     </option>
   </component>
@@ -107,6 +93,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/bandit/continuous" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
@@ -147,12 +134,12 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1584701015814</updated>
-      <workItem from="1584701022400" duration="3183000" />
+      <workItem from="1584701022400" duration="3434000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="3183000" />
+    <option name="totallyTimeSpent" value="3434000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="1295" height="695" extended-state="6" />
@@ -247,22 +234,18 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/bandit/discrete/DiscreteBandit.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="136">
-          <caret line="8" column="29" selection-start-line="8" selection-start-column="29" selection-end-line="8" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/LICENSE">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file://$PROJECT_DIR$/requirements">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="4" column="5" selection-start-line="4" selection-start-column="5" selection-end-line="4" selection-end-column="5" />
+        <state>
+          <caret column="2" lean-forward="true" selection-start-column="2" selection-end-column="2" />
         </state>
       </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bandit/discrete/DiscreteBandit.py">
+      <provider selected="true" editor-type-id="text-editor" />
     </entry>
   </component>
 </project>
