@@ -2,7 +2,17 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ae455b9b-abd8-4a8d-8786-989fe09d50b5" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/bandit/discrete/TSBandit.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bandit/discrete/TSBanditBernoulli.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/environments/BernoulliDiscreteBanditEnv.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/environments/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/experiment/run_bernoulli_bandit.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utils/folder_management.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utils/stats/BernoulliDistribution.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bandit/discrete/DiscreteBandit.py" beforeDir="false" afterPath="$PROJECT_DIR$/bandit/discrete/DiscreteBandit.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/stats/Distribution.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/stats/Distribution.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -10,11 +20,68 @@
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="DatabaseView">
+    <option name="SHOW_INTERMEDIATE" value="true" />
+    <option name="GROUP_DATA_SOURCES" value="true" />
+    <option name="GROUP_SCHEMA" value="true" />
+    <option name="GROUP_CONTENTS" value="false" />
+    <option name="SORT_POSITIONED" value="false" />
+    <option name="SHOW_EMPTY_GROUPS" value="false" />
+    <option name="AUTO_SCROLL_FROM_SOURCE" value="false" />
+    <option name="HIDDEN_KINDS">
+      <set />
+    </option>
+    <expand />
+    <select />
+  </component>
   <component name="FileEditorManager">
     <leaf>
       <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/experiment/run_bernoulli_bandit.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1145">
+              <caret line="107" selection-start-line="107" selection-end-line="107" />
+              <folding>
+                <element signature="e#0#15#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/bandit/discrete/DiscreteBandit.py">
-          <provider selected="true" editor-type-id="text-editor" />
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="238">
+              <caret line="14" selection-start-line="14" selection-end-line="14" />
+              <folding>
+                <element signature="e#0#23#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/bandit/discrete/TSBandit.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="387">
+              <caret line="57" column="12" selection-start-line="57" selection-start-column="12" selection-end-line="57" selection-end-column="12" />
+              <folding>
+                <element signature="e#0#18#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/bandit/discrete/TSBanditBernoulli.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="323">
+              <caret line="19" column="59" selection-start-line="19" selection-start-column="59" selection-end-line="19" selection-end-column="59" />
+              <folding>
+                <element signature="e#0#18#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
         </entry>
       </file>
     </leaf>
@@ -25,6 +92,11 @@
         <option value="Python Script" />
       </list>
     </option>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>args.n_arm</find>
+    </findStrings>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -44,16 +116,19 @@
         <option value="$PROJECT_DIR$/utils/stats/ConversionRateProbability.py" />
         <option value="$PROJECT_DIR$/requirements" />
         <option value="$PROJECT_DIR$/bandit/discrete/DiscreteBandit.py" />
-      </list>
-    </option>
-  </component>
-  <component name="ProjectConfigurationFiles">
-    <option name="files">
-      <list>
-        <option value="$PROJECT_DIR$/.idea/dia_2019.iml" />
-        <option value="$PROJECT_DIR$/.idea/vcs.xml" />
-        <option value="$PROJECT_DIR$/.idea/misc.xml" />
-        <option value="$PROJECT_DIR$/.idea/modules.xml" />
+        <option value="$PROJECT_DIR$/bandit/discrete/TS_Bandit.py" />
+        <option value="$PROJECT_DIR$/bandit/discrete/TS_Bandit_Bernoulli.py" />
+        <option value="$PROJECT_DIR$/environments/BernoulliBanditEnvironments.py" />
+        <option value="$PROJECT_DIR$/environments/BernoulliDiscreteBandit.py" />
+        <option value="$PROJECT_DIR$/utils/stats/Distribution.py" />
+        <option value="$PROJECT_DIR$/environments/BernoulliDiscreteBanditEnv.py" />
+        <option value="$PROJECT_DIR$/experiment/bernoulli_bandit.py" />
+        <option value="$PROJECT_DIR$/utils/folder_management.py" />
+        <option value="$PROJECT_DIR$/.gitignore" />
+        <option value="$PROJECT_DIR$/utils/stats/BernoulliDistribution.py" />
+        <option value="$PROJECT_DIR$/bandit/discrete/TSBandit.py" />
+        <option value="$PROJECT_DIR$/bandit/discrete/TSBanditBernoulli.py" />
+        <option value="$PROJECT_DIR$/experiment/run_bernoulli_bandit.py" />
       </list>
     </option>
   </component>
@@ -74,17 +149,6 @@
               <item name="dia_2019" type="b2602c69:ProjectViewProjectNode" />
               <item name="dia_2019" type="462c0819:PsiDirectoryNode" />
             </path>
-            <path>
-              <item name="dia_2019" type="b2602c69:ProjectViewProjectNode" />
-              <item name="dia_2019" type="462c0819:PsiDirectoryNode" />
-              <item name="bandit" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="dia_2019" type="b2602c69:ProjectViewProjectNode" />
-              <item name="dia_2019" type="462c0819:PsiDirectoryNode" />
-              <item name="bandit" type="462c0819:PsiDirectoryNode" />
-              <item name="discrete" type="462c0819:PsiDirectoryNode" />
-            </path>
           </expand>
           <select />
         </subPane>
@@ -95,7 +159,7 @@
   <component name="PropertiesComponent">
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/bandit/continuous" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/environments" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
@@ -106,6 +170,7 @@
       <recent name="C:\Users\User.LAPTOP-FG37H74P\Documents\GitHub\dia_2019\bandit\discrete" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\User.LAPTOP-FG37H74P\Documents\GitHub\dia_2019\environments" />
       <recent name="C:\Users\User.LAPTOP-FG37H74P\Documents\GitHub\dia_2019\bandit\continuous" />
       <recent name="C:\Users\User.LAPTOP-FG37H74P\Documents\GitHub\dia_2019\advertising" />
       <recent name="C:\Users\User.LAPTOP-FG37H74P\Documents\GitHub\dia_2019\utils" />
@@ -134,25 +199,25 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1584701015814</updated>
-      <workItem from="1584701022400" duration="3434000" />
+      <workItem from="1584701022400" duration="14036000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="3434000" />
+    <option name="totallyTimeSpent" value="14036000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="1295" height="695" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Favorites" side_tool="true" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.37590945" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.19159256" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Docker" show_stripe_button="false" />
       <window_info anchor="bottom" id="Database Changes" />
       <window_info anchor="bottom" id="Version Control" />
-      <window_info anchor="bottom" id="Python Console" weight="0.32978722" />
-      <window_info anchor="bottom" id="Terminal" weight="0.32978722" />
+      <window_info anchor="bottom" id="Python Console" weight="0.4219858" />
+      <window_info anchor="bottom" id="Terminal" weight="0.59042555" />
       <window_info anchor="bottom" id="Event Log" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32978722" />
@@ -161,8 +226,8 @@
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="right" id="SciView" />
-      <window_info anchor="right" id="Database" />
+      <window_info anchor="right" id="SciView" weight="0.72514147" />
+      <window_info anchor="right" id="Database" weight="0.32983023" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -220,20 +285,6 @@
     <entry file="file://$PROJECT_DIR$/bandit/continuous/__init__.py">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/utils/stats/ConversionRateProbability.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="170">
-          <caret line="10" lean-forward="true" selection-start-line="10" selection-end-line="10" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/utils/stats/Distribution.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="4" column="7" lean-forward="true" selection-start-line="4" selection-start-column="7" selection-end-line="4" selection-end-column="7" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/LICENSE">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
@@ -244,8 +295,106 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/bandit/discrete/DiscreteBandit.py">
+    <entry file="file://$PROJECT_DIR$/utils/stats/ConversionRateProbability.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="170">
+          <caret line="10" lean-forward="true" selection-start-line="10" selection-end-line="10" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/utils/stats/Distribution.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="15" column="7" selection-start-line="15" selection-start-column="7" selection-end-line="15" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/environments/__init__.py">
       <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/report/bernoulli_bandit/Mar20_15-45-09/results.txt">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="457">
+          <caret line="131" column="7" selection-start-line="131" selection-start-column="7" selection-end-line="131" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/utils/folder_management.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="153">
+          <caret line="9" column="59" selection-start-line="9" selection-start-column="59" selection-end-line="9" selection-end-column="59" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/environments/BernoulliDiscreteBanditEnv.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="425">
+          <caret line="25" selection-start-line="25" selection-end-line="25" />
+          <folding>
+            <element signature="e#0#23#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/utils/stats/BernoulliDistribution.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="204">
+          <caret line="13" column="35" selection-start-line="13" selection-start-column="35" selection-end-line="13" selection-end-column="35" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bandit/discrete/DiscreteBandit.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="238">
+          <caret line="14" selection-start-line="14" selection-end-line="14" />
+          <folding>
+            <element signature="e#0#23#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bandit/discrete/TSBanditBernoulli.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="323">
+          <caret line="19" column="59" selection-start-line="19" selection-start-column="59" selection-end-line="19" selection-end-column="59" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bandit/discrete/TSBandit.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="387">
+          <caret line="57" column="12" selection-start-line="57" selection-start-column="12" selection-end-line="57" selection-end-column="12" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/report/bernoulli_bandit/Mar20_16-53-29/results.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="4" selection-start-column="4" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/experiment/run_bernoulli_bandit.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1145">
+          <caret line="107" selection-start-line="107" selection-end-line="107" />
+          <folding>
+            <element signature="e#0#15#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
     </entry>
   </component>
 </project>

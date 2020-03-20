@@ -1,7 +1,8 @@
 from typing import List
+from abc import ABC
 
 
-class DiscreteBandit(object):
+class DiscreteBandit(ABC):
     """
     General class representing a bandit that uses a discrete number of arms
     """

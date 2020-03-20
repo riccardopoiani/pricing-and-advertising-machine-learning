@@ -5,6 +5,7 @@ class Distribution(ABC):
     """
     Abstract class representing a distribution from which it is possible to draw samples
     """
+
     def __init__(self):
         super().__init__()
 
