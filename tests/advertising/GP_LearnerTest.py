@@ -2,7 +2,7 @@ import unittest
 import matplotlib.pyplot as plt
 import numpy as np
 
-from advertising.learners.GP_Learner import GP_Learner
+from bandit.discrete.GPBandit import GPBandit
 from environments.AdEnvironment import AdEnvironment
 
 
@@ -17,7 +17,7 @@ class MyTestCase(unittest.TestCase):
         for i in range(5):
             arms = np.linspace(0, 100, 5)
             env = AdEnvironment(fun, arms, 2)
-            learner = GP_Learner(arms, 5)
+            learner = GPBandit(arms, 5)
 
             for j in range(60):
                 samples = learner.sample()

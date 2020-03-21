@@ -1,22 +1,22 @@
-from advertising.learners.AbstractLearner import AbstractLearner
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel as C, RBF
 
+from bandit.discrete.DiscreteBandit import DiscreteBandit
 
-class GP_Learner(AbstractLearner):
 
-    def __init__(self, arms: np.ndarray, init_std_dev: float):
+class GPBandit(DiscreteBandit):
+
+    def __init__(self, arms: np.ndarray, init_std_dev: float, alpha: float = 10, n_restarts_optimizer: int = 5):
         super().__init__(len(arms))
 
         self.arms = arms
         self.means = np.zeros(self.n_arms)
         self.sigmas = np.ones(self.n_arms) * init_std_dev
         self.pulled_arms = []
-        alpha = 10.0
         kernel = C(1.0, (1e-3, 1e3)) * RBF(1.0, (1e-3, 1e3))
         self.gp = GaussianProcessRegressor(kernel=kernel, alpha=alpha ** 2, normalize_y=True,
-                                           n_restarts_optimizer=10)
+                                           n_restarts_optimizer=n_restarts_optimizer)
 
     def update_observations(self, pulled_arm: int, reward: float):
         super().update_observations(pulled_arm, reward)

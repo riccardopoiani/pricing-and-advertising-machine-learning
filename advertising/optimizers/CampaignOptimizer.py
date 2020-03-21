@@ -1,4 +1,4 @@
-from advertising.learners.GP_Learner import GP_Learner
+from bandit.discrete.GPBandit import GPBandit
 from advertising.model.Campaign import Campaign
 import numpy as np
 
@@ -7,7 +7,7 @@ class CampaignOptimizer(object):
 
     def __init__(self, campaign: Campaign, init_std_dev):
         self._campaign = campaign
-        self._n_clicks_estimators = [GP_Learner(campaign.get_budgets(), init_std_dev)
+        self._n_clicks_estimators = [GPBandit(campaign.get_budgets(), init_std_dev)
                                      for _ in range(campaign.get_n_sub_campaigns())]
 
     def round(self):
@@ -36,8 +36,6 @@ class CampaignOptimizer(object):
             temp_clicks = clicks_matrix[row - 1][::-1]
 
             for col in range(optimization_matrix.shape[1]):
-                assert len(temp_clicks[optimization_matrix.shape[1] - col - 1:]) == len(optimization_matrix[prev_row, :col + 1])
-
                 cum_sum_clicks = temp_clicks[optimization_matrix.shape[1] - col - 1:] + optimization_matrix[prev_row, :col + 1]
                 idx_max = np.argmax(cum_sum_clicks)
 
