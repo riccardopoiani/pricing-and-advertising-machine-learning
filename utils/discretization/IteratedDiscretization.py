@@ -107,3 +107,12 @@ class LinearModel(IteratedDiscretization):
         reg = LinearRegression().fit(x, y)
 
         return lambda price: -reg.predict(np.array(price).reshape(-1, 1))
+
+
+class NeuralNetworkModel(IteratedDiscretization):
+
+    """
+    Neural network regression model fitted on the available data, which are shuffled
+    """
+    def fit_model(self) -> Callable:
+        pass

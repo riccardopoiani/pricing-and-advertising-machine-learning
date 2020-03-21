@@ -1,8 +1,10 @@
 from typing import List
 from abc import ABC
 
+from bandit.IBandit import IBandit
 
-class DiscreteBandit(ABC):
+
+class DiscreteBandit(ABC, IBandit):
     """
     General class representing a bandit that uses a discrete number of arms
     """
@@ -12,6 +14,7 @@ class DiscreteBandit(ABC):
         self.t: int = 0
         self.rewards_per_arm: List = [[] for _ in range(n_arms)]
         self.collected_rewards: List = []
+        self.pulled_arm_list: List = []
 
     def update_observations(self, pulled_arm, reward):
         """
@@ -25,3 +28,4 @@ class DiscreteBandit(ABC):
         """
         self.rewards_per_arm[pulled_arm].append(reward)
         self.collected_rewards.append(reward)
+        self.pulled_arm_list.append(pulled_arm)
