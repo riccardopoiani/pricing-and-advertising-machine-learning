@@ -24,7 +24,7 @@ class GIROBernoulliBandit(DiscreteBandit):
         available history for the rewards
 
         :param arm: arm considered from the replacement
-        :return:
+        :return: perturbated history obtained with sample with replacement
         """
         arm_rewards = self.rewards_per_arm[arm]
         arm_pseudo_reward = self.pseudo_reward_per_arm[arm]
@@ -76,7 +76,3 @@ class GIROBernoulliBandit(DiscreteBandit):
             zeros_list = [0 for _ in range(n_new_psuedo_rewards)]
             self.pseudo_reward_per_arm[pulled_arm].extend(ones_list)
             self.pseudo_reward_per_arm[pulled_arm].extend(zeros_list)
-
-
-
-
