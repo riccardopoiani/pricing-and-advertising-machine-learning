@@ -1,17 +1,24 @@
+from typing import List
+
 import numpy as np
 from bandit.discrete.DiscreteBandit import DiscreteBandit
 
 
-class UCB1Bandit(DiscreteBandit):
+class EXP3Bandit(DiscreteBandit):
     """
-    Class representing a UCB1 bandit
+    Class representing a Exp3 bandit
     """
 
-    def __init__(self, n_arms):
+    def __init__(self, n_arms: int, gamma: float):
         super().__init__(n_arms)
-        self.round_per_arm = np.zeros(n_arms)
+
+        # Hyper-parameters
+        self.gamma = gamma
+
+        # Additional data structure
+        self.weight_per_arm = np.ones(n_arms)
+        self.distribution_per_arm: List = [1 for _ in range(n_arms)]
         self.expected_rewards = np.zeros(n_arms)
-        self.upper_bound = np.ones(n_arms)
 
     def pull_arm(self):
         """
@@ -22,11 +29,13 @@ class UCB1Bandit(DiscreteBandit):
 
         :return pulled_arm: the array index of the pulled arm
         """
-        if self.t < self.n_arms:
-            return self.t
-        idxes = np.argwhere(self.upper_bound == self.upper_bound.max()).reshape(-1)
-        pulled_arm = np.random.choice(idxes)
-        return pulled_arm
+        self.distribution_per_arm: List = self.set_distribution()
+        idx = np.random.choice(a=self.n_arms, size=1, p=self.distribution_per_arm)
+        return idx[0]
+
+    def set_distribution(self) -> List:
+        weight_sum = float(sum(self.weight_per_arm))
+        return [(1.0 - self.gamma) * (w / weight_sum) + (self.gamma / self.n_arms) for w in self.weight_per_arm]
 
     def update(self, pulled_arm, reward):
         """
@@ -44,9 +53,9 @@ class UCB1Bandit(DiscreteBandit):
         """
         self.t += 1
         self.update_observations(pulled_arm, reward)
-        # update the number of times the arm has been pulled
-        self.round_per_arm[pulled_arm] += 1
+
         # update the expected reward of the puller arm
-        self.expected_rewards[pulled_arm] = (self.expected_rewards[pulled_arm] * (self.t - 1) + reward) / self.t
-        # update upper confidence bound
-        self.upper_bound = self.expected_rewards + np.sqrt((2 * np.log(self.t) / self.round_per_arm))
+        self.expected_rewards[pulled_arm] = reward / self.distribution_per_arm[pulled_arm]
+
+        # update the weight of the pulled arm
+        self.weight_per_arm[pulled_arm] *= np.math.exp(self.expected_rewards[pulled_arm] * self.gamma / self.n_arms)

@@ -16,6 +16,7 @@ from environments.BernoulliDiscreteBanditEnv import BernoulliDiscreteBanditEnv
 from utils.stats.BernoulliDistribution import BernoulliDistribution
 from bandit.discrete.TSBanditBernoulli import TSBanditBernoulli
 from bandit.discrete.UCB1Bandit import UCB1Bandit
+from bandit.discrete.EXP3Bandit import EXP3Bandit
 from bandit.discrete.GIROBernoulliBandit import GIROBernoulliBandit
 from bandit.discrete.LinPHEBernoulli import LinPHEBernoulli
 
@@ -42,6 +43,8 @@ def get_arguments():
                                                                                    "to store the output",
                         type=str)
     parser.add_argument("-b", "--bandit_name", help="Name of the bandit to be used in the experiment")
+    parser.add_argument("-gamma", "--gamma", help="Parameter for tuning the desire to pick an action uniformly at random",
+                        type=float, default=0.0)
     parser.add_argument("-a", "--perturbation_hp", help="Parameter for perturbing the history", type=float, default=0.0)
     parser.add_argument("-l", "--regularization", help="Regularization parameter", type=float, default=0.0)
     parser.add_argument("-s", "--save_result", help="Whether to store results or not", type=lambda x: int(x) != 0,
@@ -62,6 +65,8 @@ def get_bandit(args) -> DiscreteBandit:
         bandit = TSBanditBernoulli(n_arms=N_ARMS)
     elif bandit_name == "UCB1":
         bandit = UCB1Bandit(n_arms=N_ARMS)
+    elif bandit_name == "EXP3":
+        bandit = EXP3Bandit(n_arms=N_ARMS, gamma=args.gamma)
     elif bandit_name == "GIRO":
         bandit = GIROBernoulliBandit(n_arms=N_ARMS, a=args.perturbation_hp)
     elif bandit_name == "LINPHE":
