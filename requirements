@@ -2,3 +2,4 @@ numpy
 sklearn
 matplotlib
 joblib
+pytest
