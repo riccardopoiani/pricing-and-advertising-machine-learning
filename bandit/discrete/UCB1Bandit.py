@@ -20,7 +20,7 @@ class UCB1Bandit(DiscreteBandit):
         - if every arm has been pulled at least once, the arm with the highest upper bound will be pulled
         (ties are randomly broken)
 
-        :return pulled_arm: the array index of the pulled arm
+        :return pulled_arm: the index of the pulled arm
         """
         if self.t < self.n_arms:
             return np.random.choice(np.argwhere(self.round_per_arm == 0).reshape(-1))

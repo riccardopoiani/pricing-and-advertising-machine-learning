@@ -7,12 +7,13 @@ from bandit.discrete.DiscreteBandit import DiscreteBandit
 class EXP3Bandit(DiscreteBandit):
     """
     Class representing a Exp3 bandit
+    Found at https://jeremykun.com/2013/11/08/adversarial-bandits-and-the-exp3-algorithm/
     """
 
     def __init__(self, n_arms: int, gamma: float):
         super().__init__(n_arms)
 
-        # Hyper-parameters
+        # Hyper-parameter gamma belonging to [0,1] which tunes the desire to pick an action uniformly at random
         self.gamma = gamma
 
         # Additional data structure
@@ -23,11 +24,10 @@ class EXP3Bandit(DiscreteBandit):
     def pull_arm(self):
         """
         Decide which arm to pull:
-        - every arm needs to be pulled at least once
-        - if every arm has been pulled at least once, the arm with the highest upper bound will be pulled
-        (ties are randomly broken)
+        - set the distributions of the arms
+        - draw the next arm randomly according to the distributions of the arms
 
-        :return pulled_arm: the array index of the pulled arm
+        :return pulled_arm: the index of the pulled arm
         """
         self.distribution_per_arm: List = self.set_distribution()
         idx = np.random.choice(a=self.n_arms, size=1, p=self.distribution_per_arm)
@@ -42,10 +42,10 @@ class EXP3Bandit(DiscreteBandit):
         Update bandit statistics:
         - the reward collected for a given arm from the beginning of the learning process
         - ordered list containing the rewards collected from the beginning of the learning process
+        - the list of pulled arms from round 0 to round t
         - the round number t
-        - the numpy array containing the number of times each arm has been pulled until the current round t
         - the expected reward of the pulled arm
-        - the upper bound of the pulled arm
+        - the weights of the pulled arm
 
         :param pulled_arm: arm that has been pulled
         :param reward: reward obtained pulling pulled_arm
@@ -54,7 +54,7 @@ class EXP3Bandit(DiscreteBandit):
         self.t += 1
         self.update_observations(pulled_arm, reward)
 
-        # update the expected reward of the puller arm
+        # update the expected reward of the pulled arm
         self.expected_rewards[pulled_arm] = reward / self.distribution_per_arm[pulled_arm]
 
         # update the weight of the pulled arm

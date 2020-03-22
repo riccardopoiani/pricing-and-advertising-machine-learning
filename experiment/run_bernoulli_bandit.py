@@ -45,7 +45,7 @@ def get_arguments():
                         type=str)
     parser.add_argument("-b", "--bandit_name", help="Name of the bandit to be used in the experiment")
     parser.add_argument("-gamma", "--gamma", help="Parameter for tuning the desire to pick an action uniformly at random",
-                        type=float, default=0.0)
+                        type=float, default=0.1)
     parser.add_argument("-a", "--perturbation_hp", help="Parameter for perturbing the history", type=float, default=0.0)
     parser.add_argument("-l", "--regularization", help="Regularization parameter", type=float, default=0.0)
     parser.add_argument("-s", "--save_result", help="Whether to store results or not", type=lambda x: int(x) != 0,
@@ -152,3 +152,12 @@ if args.save_result:
     fd.write("Horizon: {}\n".format(args.n_rounds))
     fd.write("Bandit algorithm: {}\n".format(args.bandit_name))
     fd.close()
+
+import matplotlib.pyplot as plt
+mean_reward = np.zeros(args.n_rounds)
+for exp in results:
+    for t in range(0, args.n_rounds):
+        mean_reward[t] += exp[t]
+mean_reward = mean_reward / 1000
+plt.plot(mean_reward)
+plt.show()
