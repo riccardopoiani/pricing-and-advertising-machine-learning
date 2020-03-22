@@ -12,7 +12,7 @@ sys.path.append("../")
 
 from bandit.discrete import DiscreteBandit
 from utils.folder_management import handle_folder_creation
-from environments.BernoulliDiscreteBanditEnv import BernoulliDiscreteBanditEnv
+from environments.BernoulliDiscreteBanditEnvironment import BernoulliDiscreteBanditEnv
 from utils.stats.BernoulliDistribution import BernoulliDistribution
 from bandit.discrete.TSBanditBernoulli import TSBanditBernoulli
 from bandit.discrete.UCB1Bandit import UCB1Bandit
