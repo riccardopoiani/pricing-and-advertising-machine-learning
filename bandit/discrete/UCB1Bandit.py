@@ -16,7 +16,7 @@ class UCB1Bandit(DiscreteBandit):
     def pull_arm(self):
         """
         Decide which arm to pull:
-        - every arm needs to be pulled at least once
+        - every arm needs to be pulled at least once (randomly)
         - if every arm has been pulled at least once, the arm with the highest upper bound will be pulled
         (ties are randomly broken)
 
@@ -26,8 +26,6 @@ class UCB1Bandit(DiscreteBandit):
             return np.random.choice(np.argwhere(self.round_per_arm == 0).reshape(-1))
         idxes = np.argwhere(self.upper_bound == self.upper_bound.max()).reshape(-1)
         pulled_arm = np.random.choice(idxes)
-        #print(pulled_arm)
-        #print(idxes.size)
         return pulled_arm
 
     def update(self, pulled_arm, reward):
@@ -35,10 +33,11 @@ class UCB1Bandit(DiscreteBandit):
         Update bandit statistics:
         - the reward collected for a given arm from the beginning of the learning process
         - ordered list containing the rewards collected from the beginning of the learning process
+        - the list of pulled arms from round 0 to round t
         - the round number t
         - the numpy array containing the number of times each arm has been pulled until the current round t
         - the expected reward of the pulled arm
-        - the upper bound of the pulled arm
+        - the upper bound of all the arms
 
         :param pulled_arm: arm that has been pulled
         :param reward: reward obtained pulling pulled_arm
@@ -53,5 +52,3 @@ class UCB1Bandit(DiscreteBandit):
                                              reward) / self.round_per_arm[pulled_arm]
         # update upper confidence bound
         self.upper_bound = self.expected_rewards + np.sqrt((2 * np.log(self.t) / self.round_per_arm))
-        #print(self.upper_bound - self.expected_rewards)
-        #print(self.round_per_arm)

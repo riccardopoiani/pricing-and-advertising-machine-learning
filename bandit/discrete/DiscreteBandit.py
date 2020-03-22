@@ -21,6 +21,7 @@ class DiscreteBandit(IBandit, ABC):
         Update bandit statistics:
         - the reward collected for a given arm from the beginning of the learning process
         - ordered list containing the rewards collected from the beginning of the learning process
+        - the list of pulled arms from round 0 to round t
 
         :param pulled_arm: arm that has been pulled
         :param reward: reward obtained pulling pulled_arm

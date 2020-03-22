@@ -4,7 +4,9 @@ from bandit.discrete.DiscreteBandit import DiscreteBandit
 
 class UCB1MBandit(DiscreteBandit):
     """
-    Class representing a UCB1-M bandit
+    Class representing a UCB1-M bandit: exploits the monotonicity assumption of the customer's demand curve
+    (the larger the price, the smaller the conversion probability)
+    Found at https://home.deib.polimi.it/trovo/01papers/trovo2018improving_b.pdf
     """
 
     def __init__(self, n_arms):
@@ -16,7 +18,7 @@ class UCB1MBandit(DiscreteBandit):
     def pull_arm(self):
         """
         Decide which arm to pull:
-        - every arm needs to be pulled at least once
+        - every arm needs to be pulled at least once (randomly)
         - if every arm has been pulled at least once, the arm with the highest upper bound will be pulled
         (ties are randomly broken)
 
@@ -24,8 +26,6 @@ class UCB1MBandit(DiscreteBandit):
         """
         if self.t < self.n_arms:
             return np.random.choice(np.argwhere(self.round_per_arm == 0).reshape(-1))
-        #print(self.upper_bound)
-        #print(type(self.upper_bound))
         idxes = np.argwhere(self.upper_bound == self.upper_bound.max()).reshape(-1)
         pulled_arm = np.random.choice(idxes)
         return pulled_arm
@@ -35,10 +35,11 @@ class UCB1MBandit(DiscreteBandit):
         Update bandit statistics:
         - the reward collected for a given arm from the beginning of the learning process
         - ordered list containing the rewards collected from the beginning of the learning process
+        - the list of pulled arms from round 0 to round t
         - the round number t
         - the numpy array containing the number of times each arm has been pulled until the current round t
         - the expected reward of the pulled arm
-        - the upper bound of the pulled arm
+        - the upper bound of all the arms
 
         :param pulled_arm: arm that has been pulled
         :param reward: reward obtained pulling pulled_arm
@@ -51,10 +52,12 @@ class UCB1MBandit(DiscreteBandit):
         # update the expected reward of the pulled arm
         self.expected_rewards[pulled_arm] = (self.expected_rewards[pulled_arm] * (self.round_per_arm[pulled_arm] - 1) +
                                              reward) / self.round_per_arm[pulled_arm]
-        # update upper confidence bounds
+        # for each arm a, update its upper confidence bound
         for a in range(0, self.n_arms):
             bound_list = []
+            # for each possible starting_arm, compute one possible bound for arm a
             for starting_arm in range(0, a+1):
+                # sum the number of times the arms from starting_arm to a have been pulled
                 round_per_previous_arms = sum(self.round_per_arm[starting_arm:a+1])
 
                 non_normalized_expected_reward = 0
@@ -65,4 +68,6 @@ class UCB1MBandit(DiscreteBandit):
                 bound_list.append(
                     expected_reward_per_previous_arm + np.sqrt(((4 * np.log(self.t)) + np.log(a+1)) /
                                                                (2 * round_per_previous_arms)))
+            # minimize the list of possible bounds by the starting_arm
+            # and assign the minimized term to the upper bound of arm a
             self.upper_bound[a] = min(bound_list)
