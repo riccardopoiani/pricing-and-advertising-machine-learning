@@ -16,14 +16,15 @@ from environments.BernoulliDiscreteBanditEnvironment import BernoulliDiscreteBan
 from utils.stats.BernoulliDistribution import BernoulliDistribution
 from bandit.discrete.TSBanditBernoulli import TSBanditBernoulli
 from bandit.discrete.UCB1Bandit import UCB1Bandit
+from bandit.discrete.UCB1MBandit import UCB1MBandit
 from bandit.discrete.EXP3Bandit import EXP3Bandit
 from bandit.discrete.GIROBernoulliBandit import GIROBernoulliBandit
 from bandit.discrete.LinPHEBernoulli import LinPHEBernoulli
 
 
-N_ARMS = 5
-ARMS_PROBABILITIES_PARAMETERS = [0.4, 0.5, 0.7, 0.8, 0.9]
-PRICE_LIST = [50, 40, 30, 20, 10]
+N_ARMS = 10
+ARMS_PROBABILITIES_PARAMETERS = [0.9, 0.85, 0.6, 0.55, 0.5, 0.35, 0.30, 0.25, 0.10, 0.05]
+PRICE_LIST = (np.array([11, 13, 30, 40, 50, 55, 60, 67, 80, 100]) / 100).tolist()
 N_ROUNDS = 1000
 BASIC_OUTPUT_FOLDER = "../report/bernoulli_bandit/"
 BANDIT_NAMES = ['TS', 'UCB1', 'GIRO', 'LINPHE']
@@ -65,6 +66,8 @@ def get_bandit(args) -> DiscreteBandit:
         bandit = TSBanditBernoulli(n_arms=N_ARMS)
     elif bandit_name == "UCB1":
         bandit = UCB1Bandit(n_arms=N_ARMS)
+    elif bandit_name == "UCB1M":
+        bandit = UCB1MBandit(n_arms=N_ARMS)
     elif bandit_name == "EXP3":
         bandit = EXP3Bandit(n_arms=N_ARMS, gamma=args.gamma)
     elif bandit_name == "GIRO":
@@ -99,7 +102,7 @@ def main(args):
         idx = bandit.pull_arm()
 
         # Observe reward
-        reward = env.round(pulled_arm=idx)
+        reward = env.round(pulled_arm=idx) * PRICE_LIST[idx]
 
         # Update bandit
         bandit.update(pulled_arm=idx, reward=reward)
