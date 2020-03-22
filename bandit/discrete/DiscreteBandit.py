@@ -4,7 +4,7 @@ from abc import ABC
 from bandit.IBandit import IBandit
 
 
-class DiscreteBandit(ABC, IBandit):
+class DiscreteBandit(IBandit, ABC):
     """
     General class representing a bandit that uses a discrete number of arms
     """

@@ -1,37 +1,28 @@
-from bandit.discrete.GPBandit import GPBandit
-from advertising.model.Campaign import Campaign
+from advertising.data_structure.Campaign import Campaign
 import numpy as np
 
 
 class CampaignOptimizer(object):
 
-    def __init__(self, campaign: Campaign, init_std_dev):
-        self._campaign = campaign
-        self._n_clicks_estimators = [GPBandit(campaign.get_budgets(), init_std_dev)
-                                     for _ in range(campaign.get_n_sub_campaigns())]
-
-    def round(self):
+    @classmethod
+    def _optimize(cls, campaign: Campaign):
         """
+        Optimize the combinatorial problem of the advertising campaign by using a dynamic programming algorithm
 
+        :param campaign: the campaign to be optimized
         :return:
+            - the optimization matrix (N+1) x M containing, for each pair (budget, set of sub-campaign), the maximum number
+              of clicks achieavable
+            - the maximum indices (N+1) x M related to the optimization matrix containing, for each pair
+              (budget, set of sub-campaign), the index of the best budget for the new added sub-campaign w.r.t. previous
+              set of sub-campaign (i.e. row)
+            where N is the number of sub-campaign and M is the number of discrete budgets
         """
-        for sub_campaign_idx, estimator in enumerate(self._n_clicks_estimators):
-            sub_campaign_values = estimator.sample()
-            self._campaign.set_sub_campaign(sub_campaign_idx, sub_campaign_values)
-
-        optimization_matrix, max_idx_matrix = self.optimize()
-        return self.find_best_budgets(optimization_matrix, max_idx_matrix)
-
-    def optimize(self):
-        """
-
-        :return:
-        """
-        optimization_matrix = np.zeros(shape=(self._campaign.get_n_sub_campaigns() + 1, len(self._campaign.get_budgets())))
+        optimization_matrix = np.zeros(shape=(campaign.get_n_sub_campaigns() + 1, len(campaign.get_budgets())))
         max_idx_matrix = np.full_like(optimization_matrix, fill_value=-1, dtype=np.int)
         prev_row = 0
         # cum_budget = self._campaign.get_cum_budget()
-        clicks_matrix = self._campaign.get_sub_campaigns()
+        clicks_matrix = campaign.get_sub_campaigns()
         for row in range(1, optimization_matrix.shape[0]):
             temp_clicks = clicks_matrix[row - 1][::-1]
 
@@ -44,17 +35,28 @@ class CampaignOptimizer(object):
             prev_row = row
         return optimization_matrix, max_idx_matrix
 
-    def find_best_budgets(self, optimization_matrix, max_idx_matrix):
+    @classmethod
+    def find_best_budgets(cls, campaign):
+        """
+        Find, for the campaign, the best allocation of budgets for each sub-campaign by using the DP algorithm and by
+        exploiting the max_idx_matrix 'recursively'
+
+        :param campaign: the campaign of which you want to find the best allocation of budgets
+        :return:
+            - maximum number of clicks achieavable with the best allocation of budgets
+            - best allocation of budgets for each sub-campaign
+        """
+        optimization_matrix, max_idx_matrix = cls._optimize(campaign)
         max_clicks_idx = np.argmax(optimization_matrix[-1])
         max_clicks = optimization_matrix[-1, max_clicks_idx]
 
         best_budgets = []
-        remaining_budget = self._campaign.get_budgets()[max_clicks_idx]
+        remaining_budget = campaign.get_budgets()[max_clicks_idx]
         for i in range(optimization_matrix.shape[0] - 1, 0, -1):
-            curr_row_budget = self._campaign.get_budgets()[max_idx_matrix[i, max_clicks_idx]]
+            curr_row_budget = campaign.get_budgets()[max_idx_matrix[i, max_clicks_idx]]
             best_budgets.append(curr_row_budget)
             remaining_budget -= curr_row_budget
-            max_clicks_idx = np.where(self._campaign.get_budgets() == remaining_budget)[0]
+            max_clicks_idx = np.where(campaign.get_budgets() == remaining_budget)[0]
         best_budgets = best_budgets[::-1]
 
         return max_clicks, best_budgets

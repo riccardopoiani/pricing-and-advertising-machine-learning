@@ -2,7 +2,7 @@ import unittest
 import matplotlib.pyplot as plt
 import numpy as np
 
-from bandit.discrete.GPBandit import GPBandit
+from bandit.discrete.GP_TSBandit import GP_TSBandit
 from environments.AdEnvironment import AdEnvironment
 
 
@@ -17,11 +17,10 @@ class MyTestCase(unittest.TestCase):
         for i in range(5):
             arms = np.linspace(0, 100, 5)
             env = AdEnvironment(fun, arms, 2)
-            learner = GPBandit(arms, 5)
+            learner = GP_TSBandit(list(arms), 5)
 
             for j in range(60):
-                samples = learner.sample()
-                arm_to_pull = int(np.argmax(samples))
+                arm_to_pull = learner.pull_arm()
                 reward = env.round(arm_to_pull)
                 learner.update(arm_to_pull, reward)
 
