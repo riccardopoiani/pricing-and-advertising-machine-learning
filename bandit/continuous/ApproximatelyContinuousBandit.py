@@ -21,7 +21,7 @@ class ApproximatelyContinuousBandit(IBandit):
         self.bandit.pull_arm()
 
     def update(self, pulled_arm, reward):
-        self.bandit.update(pulled_arm=pulled_arm, reward=reward)
+        self.bandit.update(pulled_arm=pulled_arm, observed_reward=reward)
 
         if self.discretization.check_update_condition(time=self.bandit.t):
             # Reset the bandit, store information, and obtain new arms

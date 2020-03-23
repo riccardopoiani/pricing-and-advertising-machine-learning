@@ -1,31 +1,32 @@
 import argparse
-import pickle
-import numpy as np
 import os
+import pickle
 import sys
-
-from joblib import Parallel, delayed
 from typing import List
+
+import numpy as np
+from joblib import Parallel, delayed
 
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
 from bandit.discrete import DiscreteBandit
+from bandit.discrete.TSBandit import TSBandit
 from utils.folder_management import handle_folder_creation
 from environments.BernoulliDiscreteBanditEnvironment import BernoulliDiscreteBanditEnv
 from utils.stats.BernoulliDistribution import BernoulliDistribution
-from bandit.discrete.TSBanditBernoulli import TSBanditBernoulli
 from bandit.discrete.UCB1Bandit import UCB1Bandit
 from bandit.discrete.UCB1MBandit import UCB1MBandit
 from bandit.discrete.UCBLBandit import UCBLBandit
 from bandit.discrete.EXP3Bandit import EXP3Bandit
 from bandit.discrete.GIROBernoulliBandit import GIROBernoulliBandit
-from bandit.discrete.LinPHEBernoulli import LinPHEBernoulli
-
+from bandit.discrete.LinPHE import LinPHE
 
 N_ARMS = 10
+
 ARMS_PROBABILITIES_PARAMETERS = [0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01]
 PRICE_LIST = (np.array([11, 13, 20, 30, 40, 45, 55, 60, 65, 70]) / 70).tolist()
+
 N_ROUNDS = 1000
 BASIC_OUTPUT_FOLDER = "../report/bernoulli_bandit/"
 BANDIT_NAMES = ['TS', 'UCB1', 'UCB1M', 'UCBL', 'EXP3' , 'GIRO', 'LINPHE']
@@ -49,6 +50,7 @@ def get_arguments():
                         type=float, default=0.1)
     parser.add_argument("-crp_ub", "--crp_upper_bound", help="Upper bound of the conversion rate probability",
                         type=float, default=0.1)
+
     parser.add_argument("-a", "--perturbation_hp", help="Parameter for perturbing the history", type=float, default=0.0)
     parser.add_argument("-l", "--regularization", help="Regularization parameter", type=float, default=0.0)
     parser.add_argument("-s", "--save_result", help="Whether to store results or not", type=lambda x: int(x) != 0,
@@ -66,7 +68,7 @@ def get_bandit(args) -> DiscreteBandit:
     bandit_name = args.bandit_name
 
     if bandit_name == "TS":
-        bandit = TSBanditBernoulli(n_arms=N_ARMS)
+        bandit = TSBandit(n_arms=N_ARMS)
     elif bandit_name == "UCB1":
         bandit = UCB1Bandit(n_arms=N_ARMS)
     elif bandit_name == "UCB1M":
@@ -76,16 +78,17 @@ def get_bandit(args) -> DiscreteBandit:
     elif bandit_name == "EXP3":
         bandit = EXP3Bandit(n_arms=N_ARMS, gamma=args.gamma)
     elif bandit_name == "GIRO":
-        bandit = GIROBernoulliBandit(n_arms=N_ARMS, a=args.perturbation_hp)
+        bandit = GIROBernoulliBandit(n_arms=N_ARMS, a=args.perturbation_hp, prices=PRICE_LIST)
     elif bandit_name == "LINPHE":
         features = np.zeros(shape=(N_ARMS, 2))
         for i in range(N_ARMS):
-            features[i, 0] = PRICE_LIST[i]
+            features[i, 0] = PRICE_LIST[i]*ARMS_PROBABILITIES_PARAMETERS[i]
             features[i, 1] = 1
 
-        bandit = LinPHEBernoulli(n_arms=N_ARMS, perturbation=args.perturbation_hp,
-                                 regularization=args.regularization,
-                                 features=features, features_dim=2)
+        bandit = LinPHE(n_arms=N_ARMS, perturbation=args.perturbation_hp,
+                        regularization=args.regularization,
+                        features=features, features_dim=2,
+                        prices=np.array(PRICE_LIST))
     else:
         raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
 

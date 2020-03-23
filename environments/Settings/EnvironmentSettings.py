@@ -1,10 +1,14 @@
+<<<<<<< Updated upstream
 import numpy as np
 
 from typing import List, Tuple
+=======
+from typing import List
+>>>>>>> Stashed changes
 
 from environments.Settings.AdvertisingScenario import PolynomialAdvertisingScenario
 from environments.Settings.Scenario import Scenario, LinearPriceGaussianVisitsScenario
-from utils.stats.StochasticFunction import IStochasticFunction, BoundedLambdaStochasticFunction
+from utils.stats.StochasticFunction import IStochasticFunction
 
 
 class EnvironmentManager(object):

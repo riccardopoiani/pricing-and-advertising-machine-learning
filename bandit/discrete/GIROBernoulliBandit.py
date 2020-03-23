@@ -11,11 +11,12 @@ class GIROBernoulliBandit(DiscreteBandit):
     "Garbage-in reward-out: bootstrapping exploration in multi-armed bandits" - Kveton et. al [2019]
     """
 
-    def __init__(self, n_arms: int, a: float):
+    def __init__(self, n_arms: int, a: float, prices: np.array):
         super().__init__(n_arms=n_arms)
         self.real_reward_count = np.zeros(n_arms)
         self.a = a
         self.pseudo_reward_per_arm: List = [[] for _ in range(n_arms)]
+        self.prices = prices
 
     def _sample_with_replacement(self, arm: int) -> np.array:
         """
@@ -45,6 +46,7 @@ class GIROBernoulliBandit(DiscreteBandit):
             if self.real_reward_count[arm] > 0:
                 new_arm_history: np.array = self._sample_with_replacement(arm=arm)
                 estimated_arm_values[arm] = new_arm_history.mean()
+                estimated_arm_values[arm] = estimated_arm_values[arm]
             else:
                 estimated_arm_values[arm] = np.infty
 
@@ -70,9 +72,9 @@ class GIROBernoulliBandit(DiscreteBandit):
 
         n_total_pseudo_rewards = int(self.real_reward_count[pulled_arm] * self.a)
         if n_total_pseudo_rewards > len(self.pseudo_reward_per_arm[pulled_arm]) // 2:
-            n_new_psuedo_rewards = n_total_pseudo_rewards - (len(self.pseudo_reward_per_arm[pulled_arm]) // 2)
+            n_new_pseudo_rewards = n_total_pseudo_rewards - (len(self.pseudo_reward_per_arm[pulled_arm]) // 2)
 
-            ones_list = [1 for _ in range(n_new_psuedo_rewards)]
-            zeros_list = [0 for _ in range(n_new_psuedo_rewards)]
+            ones_list = [1 for _ in range(n_new_pseudo_rewards)]
+            zeros_list = [0 for _ in range(n_new_pseudo_rewards)]
             self.pseudo_reward_per_arm[pulled_arm].extend(ones_list)
             self.pseudo_reward_per_arm[pulled_arm].extend(zeros_list)

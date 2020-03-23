@@ -1,17 +1,17 @@
 import numpy as np
-from abc import ABC, abstractmethod
-
 
 from bandit.discrete.DiscreteBandit import DiscreteBandit
 
 
-class TSBandit(DiscreteBandit, ABC):
+class TSBandit(DiscreteBandit):
     """
-    Abstract class representing a Thompson sampling discrete learner
+    Class representing a Thompson sampling discrete learner
     """
 
-    def __init__(self, n_arms: int):
+    def __init__(self, n_arms: int, prices: np.array):
         super(DiscreteBandit, self).__init__(n_arms=n_arms)
+        self.beta_distribution = np.ones((n_arms, 2))
+        self.prices = prices
 
     def pull_arm(self):
         """
@@ -20,7 +20,7 @@ class TSBandit(DiscreteBandit, ABC):
 
         :return: index of the arm to be pulled
         """
-        idx = np.argmax(self.sample_beta_distribution())
+        idx = np.argmax(self.sample_beta_distribution() * self.prices)
         return idx
 
     def update(self, pulled_arm, reward):
@@ -35,7 +35,6 @@ class TSBandit(DiscreteBandit, ABC):
         self.update_observations(pulled_arm=pulled_arm, reward=reward)
         self.update_beta_distribution(pulled_arm=pulled_arm, reward=reward)
 
-    @abstractmethod
     def sample_beta_distribution(self) -> np.array:
         """
         Draw a sample from the prior distribution of each arm of the bandit
@@ -43,9 +42,11 @@ class TSBandit(DiscreteBandit, ABC):
         :return: array containing in the i-th position the sample obtained from the
         prior of the i-th arm of the bandit
         """
-        pass
 
-    @abstractmethod
+        prior_sampling = np.random.beta(a=self.beta_distribution[:, 0],
+                                        b=self.beta_distribution[:, 1])
+        return prior_sampling
+
     def update_beta_distribution(self, pulled_arm, reward):
         """
         Update the beta distribution of the pulled arm after having observed a reward
@@ -55,5 +56,7 @@ class TSBandit(DiscreteBandit, ABC):
         :param reward: observed reward of pulled_arm
         :return: none
         """
-        pass
-
+        if reward != 0:
+            reward = 1
+        self.beta_distribution[pulled_arm, 0] += reward
+        self.beta_distribution[pulled_arm, 1] += (1.0 - reward)

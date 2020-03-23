@@ -26,6 +26,7 @@ class PricingStationaryEnvironmentFixedBudget(Environment):
         self.sampled_users: List = []
         self.fixed_budget = fixed_budget
         self.current_user_class = 0
+        self.number_of_days = 1
 
     def round(self, price):
         """
@@ -49,5 +50,9 @@ class PricingStationaryEnvironmentFixedBudget(Environment):
                 self.sampled_users.extend([i] * n_users)
             np.random.shuffle(self.sampled_users)
 
+        self.number_of_days += 1
         self.current_user_class = self.sampled_users.pop()
         return self.current_user_class
+
+    def get_number_of_days(self):
+        return self.number_of_days

@@ -13,7 +13,7 @@ from environments.PricingStationaryEnvironmentFixedBudget import PricingStationa
 from bandit.discrete import DiscreteBandit
 from bandit.discrete.EXP3Bandit import EXP3Bandit
 from bandit.discrete.GIROBernoulliBandit import GIROBernoulliBandit
-from bandit.discrete.LinPHEBernoulli import LinPHEBernoulli
+from bandit.discrete.LinPHE import LinPHE
 from bandit.discrete.TSBanditBernoulli import TSBanditBernoulli
 from bandit.discrete.UCB1Bandit import UCB1Bandit
 from environments.Settings import EnvironmentSettings
@@ -135,9 +135,9 @@ def get_bandit(args, prices) -> DiscreteBandit:
             features[i, 0] = prices[i]
             features[i, 1] = 1
 
-        bandit = LinPHEBernoulli(n_arms=args.n_arms, perturbation=args.perturbation,
-                                 regularization=args.regularization,
-                                 features=features, features_dim=2)
+        bandit = LinPHE(n_arms=args.n_arms, perturbation=args.perturbation,
+                        regularization=args.regularization,
+                        features=features, features_dim=2)
     else:
         raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
 

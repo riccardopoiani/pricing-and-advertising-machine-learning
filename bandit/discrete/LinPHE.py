@@ -5,13 +5,13 @@ from typing import List
 from bandit.discrete.DiscreteBandit import DiscreteBandit
 
 
-class LinPHEBernoulli(DiscreteBandit):
+class LinPHE(DiscreteBandit):
     """
     "Pertubated-history exploration in stochastic linear bandits" - Kveton et. al [2019]
     """
 
     def __init__(self, n_arms: int, perturbation: int, regularization: float,
-                 features: np.array, features_dim: int):
+                 features: np.array, features_dim: int, prices: np.array):
         super().__init__(n_arms=n_arms)
 
         # Hyper-parameters
@@ -21,6 +21,7 @@ class LinPHEBernoulli(DiscreteBandit):
         # Features
         self.features: np.array = features
         self.feature_dim = features_dim
+        self.prices = prices
 
         # Additional data structure
         self.arm_count: np.array = np.zeros(shape=n_arms)
@@ -61,7 +62,8 @@ class LinPHEBernoulli(DiscreteBandit):
         for arm in range(self.n_arms):
             curr_feature = self.features[arm]
             curr_n_binomial = self.perturbation * self.arm_count[arm]
-            cum_vect += curr_feature * (self.cum_reward_per_arm[arm] + np.random.binomial(n=curr_n_binomial, p=1 / 2))
+            cum_vect += curr_feature * (self.cum_reward_per_arm[arm] + np.random.binomial(n=curr_n_binomial, p=1 / 2)) \
+                        * self.prices[arm]
 
         self.theta_hat = np.dot(self.g_inv, cum_vect)
 
