@@ -5,12 +5,13 @@ from bandit.discrete.DiscreteBandit import DiscreteBandit
 class UCBLBandit(DiscreteBandit):
     """
     Class representing a UCBL bandit, which exploits the assumption of knowing a priori that the conversion rates
-    of all the arms are upper bounded by a value crp_upper_bound <= 1/2.
-    Found at https://home.deib.polimi.it/trovo/01papers/trovo2018improving_b.pdf
+    of all the arms are upper bounded by a value crp_upper_bound.
+    Found at https://home.deib.polimi.it/trovo/01papers/trovo2018improving_a.pdf
     """
 
     def __init__(self, n_arms, crp_upper_bound, price_list):
         super().__init__(n_arms)
+
         # Hyper-parameter: the upper bound of the conversion rates of all the arms
         self.crp_upper_bound = crp_upper_bound
 

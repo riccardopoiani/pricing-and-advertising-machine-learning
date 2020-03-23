@@ -2,15 +2,23 @@ import numpy as np
 from bandit.discrete.DiscreteBandit import DiscreteBandit
 
 
-class UCB1MBandit(DiscreteBandit):
+class UCBLMBandit(DiscreteBandit):
     """
-    Class representing a UCB1-M bandit: exploits the monotonicity assumption of the customer's demand curve
+    Class representing a UCB1-LM bandit: exploits two assumptions:
+    - the monotonicity assumption of the customer's demand curve
     (the larger the price, the smaller the conversion probability)
+    - the assumption of knowing a priori that the conversion rates
+    of all the arms are upper bounded by a value crp_upper_bound
     Found at https://home.deib.polimi.it/trovo/01papers/trovo2018improving_a.pdf
     """
 
-    def __init__(self, n_arms, price_list):
+    def __init__(self, n_arms, crp_upper_bound, price_list):
         super().__init__(n_arms)
+
+        # Hyper-parameter: the upper bound of the conversion rates of all the arms
+        self.crp_upper_bound = crp_upper_bound
+
+        # Additional data structure
         self.price_list = price_list
         self.round_per_arm = np.zeros(n_arms)
         self.expected_bernoulli = np.zeros(n_arms)
@@ -53,6 +61,10 @@ class UCB1MBandit(DiscreteBandit):
         # update the number of times the arm has been pulled
         self.round_per_arm[pulled_arm] += 1
 
+        for i in range(self.n_arms):
+            print("{}".format(self.round_per_arm[i]), end=" ")
+        print("\n")
+
         # update the expected bernoulli of the pulled arm
         if reward != 0:
             self.expected_bernoulli[pulled_arm] = (self.expected_bernoulli[pulled_arm] *
@@ -76,8 +88,9 @@ class UCB1MBandit(DiscreteBandit):
 
                 expected_bernoulli_per_previous_arm = non_normalized_expected_bernoulli / round_per_previous_arms
                 bound_list.append(
-                    expected_bernoulli_per_previous_arm + np.sqrt(((4 * np.log(self.t)) + np.log(a+1)) /
-                                                               (2 * round_per_previous_arms)))
+                    expected_bernoulli_per_previous_arm + np.sqrt(((2 * self.crp_upper_bound * (4 * np.log(self.t)
+                                                                                                + np.log(a+1)))
+                                                                   / round_per_previous_arms)))
             # minimize the list of possible bounds by the starting_arm
             # and assign the minimized term to the upper bound of arm a
             self.upper_bound[a] = min(bound_list)

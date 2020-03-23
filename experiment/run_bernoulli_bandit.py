@@ -18,6 +18,7 @@ from utils.stats.BernoulliDistribution import BernoulliDistribution
 from bandit.discrete.UCB1Bandit import UCB1Bandit
 from bandit.discrete.UCB1MBandit import UCB1MBandit
 from bandit.discrete.UCBLBandit import UCBLBandit
+from bandit.discrete.UCBLM import UCBLMBandit
 from bandit.discrete.EXP3Bandit import EXP3Bandit
 from bandit.discrete.GIROBernoulliBandit import GIROBernoulliBandit
 from bandit.discrete.LinPHE import LinPHE
@@ -29,7 +30,7 @@ PRICE_LIST = (np.array([11, 13, 20, 30, 40, 45, 55, 60, 65, 70]) / 70).tolist()
 
 N_ROUNDS = 1000
 BASIC_OUTPUT_FOLDER = "../report/bernoulli_bandit/"
-BANDIT_NAMES = ['TS', 'UCB1', 'UCB1M', 'UCBL', 'EXP3' , 'GIRO', 'LINPHE']
+BANDIT_NAMES = ['TS', 'UCB1', 'UCB1M', 'UCBL', 'UCBLM', 'EXP3' , 'GIRO', 'LINPHE']
 
 
 def get_arguments():
@@ -75,6 +76,8 @@ def get_bandit(args) -> DiscreteBandit:
         bandit = UCB1MBandit(n_arms=N_ARMS, price_list=PRICE_LIST)
     elif bandit_name == "UCBL":
         bandit = UCBLBandit(n_arms=N_ARMS, crp_upper_bound=args.crp_upper_bound, price_list=PRICE_LIST)
+    elif bandit_name == "UCBLM":
+        bandit = UCBLMBandit(n_arms=N_ARMS, crp_upper_bound=args.crp_upper_bound, price_list=PRICE_LIST)
     elif bandit_name == "EXP3":
         bandit = EXP3Bandit(n_arms=N_ARMS, gamma=args.gamma)
     elif bandit_name == "GIRO":
