@@ -17,17 +17,18 @@ from utils.stats.BernoulliDistribution import BernoulliDistribution
 from bandit.discrete.TSBanditBernoulli import TSBanditBernoulli
 from bandit.discrete.UCB1Bandit import UCB1Bandit
 from bandit.discrete.UCB1MBandit import UCB1MBandit
+from bandit.discrete.UCBLBandit import UCBLBandit
 from bandit.discrete.EXP3Bandit import EXP3Bandit
 from bandit.discrete.GIROBernoulliBandit import GIROBernoulliBandit
 from bandit.discrete.LinPHEBernoulli import LinPHEBernoulli
 
 
 N_ARMS = 10
-ARMS_PROBABILITIES_PARAMETERS = [0.9, 0.85, 0.6, 0.55, 0.5, 0.35, 0.30, 0.25, 0.10, 0.05]
-PRICE_LIST = (np.array([11, 13, 30, 40, 50, 55, 60, 67, 80, 100]) / 100).tolist()
+ARMS_PROBABILITIES_PARAMETERS = [0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01]
+PRICE_LIST = (np.array([11, 13, 20, 30, 40, 45, 55, 60, 65, 70]) / 70).tolist()
 N_ROUNDS = 1000
 BASIC_OUTPUT_FOLDER = "../report/bernoulli_bandit/"
-BANDIT_NAMES = ['TS', 'UCB1', 'GIRO', 'LINPHE']
+BANDIT_NAMES = ['TS', 'UCB1', 'UCB1M', 'UCBL', 'EXP3' , 'GIRO', 'LINPHE']
 
 
 def get_arguments():
@@ -44,7 +45,9 @@ def get_arguments():
                                                                                    "to store the output",
                         type=str)
     parser.add_argument("-b", "--bandit_name", help="Name of the bandit to be used in the experiment")
-    parser.add_argument("-gamma", "--gamma", help="Parameter for tuning the desire to pick an action uniformly at random",
+    parser.add_argument("-gamma", "--gamma", help="Parameter tuning the desire to pick an action uniformly at random",
+                        type=float, default=0.1)
+    parser.add_argument("-crp_ub", "--crp_upper_bound", help="Upper bound of the conversion rate probability",
                         type=float, default=0.1)
     parser.add_argument("-a", "--perturbation_hp", help="Parameter for perturbing the history", type=float, default=0.0)
     parser.add_argument("-l", "--regularization", help="Regularization parameter", type=float, default=0.0)
@@ -67,7 +70,9 @@ def get_bandit(args) -> DiscreteBandit:
     elif bandit_name == "UCB1":
         bandit = UCB1Bandit(n_arms=N_ARMS)
     elif bandit_name == "UCB1M":
-        bandit = UCB1MBandit(n_arms=N_ARMS)
+        bandit = UCB1MBandit(n_arms=N_ARMS, price_list=PRICE_LIST)
+    elif bandit_name == "UCBL":
+        bandit = UCBLBandit(n_arms=N_ARMS, crp_upper_bound=args.crp_upper_bound, price_list=PRICE_LIST)
     elif bandit_name == "EXP3":
         bandit = EXP3Bandit(n_arms=N_ARMS, gamma=args.gamma)
     elif bandit_name == "GIRO":
@@ -152,12 +157,3 @@ if args.save_result:
     fd.write("Horizon: {}\n".format(args.n_rounds))
     fd.write("Bandit algorithm: {}\n".format(args.bandit_name))
     fd.close()
-
-import matplotlib.pyplot as plt
-mean_reward = np.zeros(args.n_rounds)
-for exp in results:
-    for t in range(0, args.n_rounds):
-        mean_reward[t] += exp[t]
-mean_reward = mean_reward / 1000
-plt.plot(mean_reward)
-plt.show()
