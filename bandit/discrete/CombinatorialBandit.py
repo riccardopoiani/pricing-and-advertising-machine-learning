@@ -17,7 +17,7 @@ class CombinatorialBandit(IBandit, ABC):
     def __init__(self, campaign: Campaign):
         self.campaign: Campaign = campaign
         self.t: int = 0
-        self.collected_rewards: List[List] = []
+        self.collected_rewards: List[float] = []
         self.pulled_superarm_list: List[List] = []
         self.model_list: List[DiscreteRegressor] = []
 
@@ -29,7 +29,7 @@ class CombinatorialBandit(IBandit, ABC):
         :return: the indices of the best budgets given the actual campaign
         """
         max_clicks, best_budgets = CampaignOptimizer.find_best_budgets(self.campaign)
-        return [np.where(self.campaign.get_budgets() == budget)[0] for budget in best_budgets]
+        return [np.where(self.campaign.get_budgets() == budget)[0][0] for budget in best_budgets]
 
     def update_observations(self, pulled_arm: List[int], reward: List[float]) -> None:
         """
@@ -41,21 +41,21 @@ class CombinatorialBandit(IBandit, ABC):
         :param reward: reward obtained pulling pulled_superarm
         :return: None
         """
-        self.collected_rewards.append(reward)
+        self.collected_rewards.append(sum(reward))
         self.pulled_superarm_list.append(pulled_arm)
 
-    def update(self, pulled_arm: List[int], observed_reward: List[float]) -> None:
+    def update(self, pulled_arm: List[int], reward: List[float]) -> None:
         """
         Update observations and models of the sub-campaign
 
         :param pulled_arm: list of indices of the pulled arms (i.e. superarm pulled)
-        :param observed_reward: list of observed reward for each pulled arm
+        :param reward: list of observed reward for each pulled arm
         :return: None
         """
         self.t += 1
-        self.update_observations(pulled_arm, observed_reward)
+        self.update_observations(pulled_arm, reward)
         for sub_index, model in enumerate(self.model_list):
-            model.update_model(pulled_arm[sub_index], observed_reward[sub_index])
+            model.update_model(pulled_arm[sub_index], reward[sub_index])
 
             # Update estimations of the values of the sub-campaigns
             sub_campaign_values = self.model_list[sub_index].sample_distribution()

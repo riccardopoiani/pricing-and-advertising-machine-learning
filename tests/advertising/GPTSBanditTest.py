@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from bandit.discrete.TSBanditGP import TSBanditGP
-from environments.AdEnvironment import AdEnvironment
+
+
 
 
 class GP_TSBanditTestCase(unittest.TestCase):
@@ -16,12 +17,11 @@ class GP_TSBanditTestCase(unittest.TestCase):
 
         for i in range(10):
             arms = np.linspace(0, 100, 5, dtype=np.float)
-            env = AdEnvironment(fun, arms, 1)
             learner = TSBanditGP(list(arms), 5, normalized=True)
 
-            for j in range(100):
+            for j in range(150):
                 arm_to_pull = learner.pull_arm()
-                reward = env.round(arm_to_pull)
+                reward = fun(arms[arm_to_pull])+np.random.normal(0,1)
                 learner.update(arm_to_pull, reward)
 
             rewards_per_experiment.append(learner.collected_rewards)
@@ -31,7 +31,10 @@ class GP_TSBanditTestCase(unittest.TestCase):
             regrets.append([12 - x for x in rewards_per_experiment[i]])
         avg_regrets = np.mean(regrets, axis=0)
         cum_regrets = np.cumsum(avg_regrets)
-        plt.plot(avg_regrets, 'r')
+        plt.plot(avg_regrets, 'g')
+        plt.show()
+
+        plt.plot(cum_regrets, 'r')
         plt.show()
 
 

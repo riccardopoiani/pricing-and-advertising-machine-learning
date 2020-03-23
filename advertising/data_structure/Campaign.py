@@ -7,9 +7,9 @@ class Campaign(object):
     Data structure in order to aggregate all the information about the campaign of an advertising problem
     """
 
-    def __init__(self, n_sub_campaigns: int, cum_budget: int, budget_step: int):
+    def __init__(self, n_sub_campaigns: int, cum_budget: int, n_arms: int):
         self._n_sub_campaigns = n_sub_campaigns
-        self._budgets = np.arange(0, cum_budget+1, budget_step)
+        self._budgets = np.linspace(0, cum_budget, n_arms)
         self._cum_budget = cum_budget
         self._sub_campaigns_matrix = np.zeros(shape=(n_sub_campaigns, len(self._budgets)))
 
