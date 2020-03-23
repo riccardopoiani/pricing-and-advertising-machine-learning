@@ -5,7 +5,7 @@ from advertising.data_structure.Campaign import Campaign
 from advertising.optimizers.CampaignOptimizer import CampaignOptimizer
 
 
-class MyTestCase(unittest.TestCase):
+class CampaignOptimizerTestCase(unittest.TestCase):
     def test_optimize_1(self):
         campaign = Campaign(2, 100, 50)
         campaign.set_sub_campaign(0, [3, 7, 14])

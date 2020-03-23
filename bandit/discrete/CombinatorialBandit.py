@@ -1,7 +1,10 @@
 from abc import ABC
-from typing import List, Tuple
+from typing import List
+import numpy as np
 
 from advertising.data_structure.Campaign import Campaign
+from advertising.optimizers.CampaignOptimizer import CampaignOptimizer
+from advertising.regressors.DiscreteRegressor import DiscreteRegressor
 from bandit.IBandit import IBandit
 
 
@@ -14,19 +17,48 @@ class CombinatorialBandit(IBandit, ABC):
     def __init__(self, campaign: Campaign):
         self.campaign: Campaign = campaign
         self.t: int = 0
-        self.collected_rewards: List[List] = [[] for _ in range(campaign.get_n_sub_campaigns())]
-        self.pulled_superarm_list: List[Tuple] = []
+        self.collected_rewards: List[List] = []
+        self.pulled_superarm_list: List[List] = []
+        self.model_list: List[DiscreteRegressor] = []
 
-    def update_observations(self, pulled_arm: List[float], reward: List[float]):
+    def pull_arm(self) -> List[int]:
         """
-        Update bandit statistics:
-        - ordered list containing the rewards collected from the beginning of the learning process
+        Find the best allocation of budgets by optimizing the combinatorial problem of the campaign and then return
+        the indices of the best budgets
 
-        :param pulled_arm: the superarm that has been pulled
+        :return: the indices of the best budgets given the actual campaign
+        """
+        max_clicks, best_budgets = CampaignOptimizer.find_best_budgets(self.campaign)
+        return [np.where(self.campaign.get_budgets() == budget)[0] for budget in best_budgets]
+
+    def update_observations(self, pulled_arm: List[int], reward: List[float]) -> None:
+        """
+        Update the combinatorial bandit statistics:
+         - ordered list containing the rewards collected since the beginning
+         - ordered list of the superarm pulled since the beginning
+
+        :param pulled_arm: the superarm that has been pulled (list of indices)
         :param reward: reward obtained pulling pulled_superarm
-        :return: none
+        :return: None
         """
         self.collected_rewards.append(reward)
         self.pulled_superarm_list.append(pulled_arm)
+
+    def update(self, pulled_arm: List[int], observed_reward: List[float]) -> None:
+        """
+        Update observations and models of the sub-campaign
+
+        :param pulled_arm: list of indices of the pulled arms (i.e. superarm pulled)
+        :param observed_reward: list of observed reward for each pulled arm
+        :return: None
+        """
+        self.t += 1
+        self.update_observations(pulled_arm, observed_reward)
+        for sub_index, model in enumerate(self.model_list):
+            model.update_model(pulled_arm[sub_index], observed_reward[sub_index])
+
+            # Update estimations of the values of the sub-campaigns
+            sub_campaign_values = self.model_list[sub_index].sample_distribution()
+            self.campaign.set_sub_campaign(sub_index, sub_campaign_values)
 
 

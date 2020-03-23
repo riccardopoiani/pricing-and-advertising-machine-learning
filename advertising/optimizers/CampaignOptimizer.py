@@ -1,11 +1,17 @@
+from typing import List
+
 from advertising.data_structure.Campaign import Campaign
 import numpy as np
 
 
 class CampaignOptimizer(object):
+    """
+    Helper class that contains all the function used to optimize the combinatorial problem, i.e. campaign advertising
+    problem
+    """
 
     @classmethod
-    def _optimize(cls, campaign: Campaign):
+    def _optimize(cls, campaign: Campaign) -> (np.ndarray, np.ndarray):
         """
         Optimize the combinatorial problem of the advertising campaign by using a dynamic programming algorithm
 
@@ -36,7 +42,7 @@ class CampaignOptimizer(object):
         return optimization_matrix, max_idx_matrix
 
     @classmethod
-    def find_best_budgets(cls, campaign):
+    def find_best_budgets(cls, campaign) -> (float, List[float]):
         """
         Find, for the campaign, the best allocation of budgets for each sub-campaign by using the DP algorithm and by
         exploiting the max_idx_matrix 'recursively'
