@@ -3,7 +3,7 @@ import numpy as np
 from bandit.discrete.DiscreteBandit import DiscreteBandit
 
 
-class TSBandit(DiscreteBandit):
+class TSBanditRescaledBernoulli(DiscreteBandit):
     """
     Class representing a Thompson sampling discrete learner
     """

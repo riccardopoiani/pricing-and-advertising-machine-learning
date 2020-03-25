@@ -14,7 +14,7 @@ from bandit.discrete import DiscreteBandit
 from bandit.discrete.EXP3Bandit import EXP3Bandit
 from bandit.discrete.GIROBernoulliBandit import GIROBernoulliBandit
 from bandit.discrete.LinPHE import LinPHE
-from bandit.discrete.TSBanditBernoulli import TSBanditBernoulli
+from bandit.discrete.TSBanditRescaledBernoulli import TSBanditRescaledBernoulli
 from bandit.discrete.UCB1Bandit import UCB1Bandit
 from environments.Settings import EnvironmentSettings
 from environments.Settings.Scenario import LinearPriceGaussianVisitsScenario
@@ -122,13 +122,13 @@ def get_bandit(args, prices) -> DiscreteBandit:
     bandit_name = args.bandit_name
 
     if bandit_name == "TS":
-        bandit = TSBanditBernoulli(n_arms=args.n_arms)
+        bandit = TSBanditRescaledBernoulli(n_arms=args.n_arms, prices=prices)
     elif bandit_name == "UCB1":
         bandit = UCB1Bandit(n_arms=args.n_arms)
     elif bandit_name == "EXP3":
         bandit = EXP3Bandit(n_arms=args.n_arms, gamma=args.gamma)
     elif bandit_name == "GIRO":
-        bandit = GIROBernoulliBandit(n_arms=args.n_arms, a=args.perturbation)
+        bandit = GIROBernoulliBandit(n_arms=args.n_arms, a=args.perturbation, prices=prices)
     elif bandit_name == "LINPHE":
         features = np.zeros(shape=(args.n_arms, 2))
         for i in range(args.n_arms):
@@ -137,7 +137,7 @@ def get_bandit(args, prices) -> DiscreteBandit:
 
         bandit = LinPHE(n_arms=args.n_arms, perturbation=args.perturbation,
                         regularization=args.regularization,
-                        features=features, features_dim=2)
+                        features=features, features_dim=2, prices=prices)
     else:
         raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
 

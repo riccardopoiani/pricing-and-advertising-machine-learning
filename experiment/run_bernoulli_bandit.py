@@ -11,7 +11,7 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
 from bandit.discrete import DiscreteBandit
-from bandit.discrete.TSBandit import TSBandit
+from bandit.discrete.TSBanditRescaledBernoulli import TSBandit
 from utils.folder_management import handle_folder_creation
 from environments.BernoulliDiscreteBanditEnvironment import BernoulliDiscreteBanditEnv
 from utils.stats.BernoulliDistribution import BernoulliDistribution
