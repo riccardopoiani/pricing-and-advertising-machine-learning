@@ -11,7 +11,7 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
 from bandit.discrete import DiscreteBandit
-from bandit.discrete.TSBanditRescaledBernoulli import TSBandit
+from bandit.discrete.TSBanditRescaledBernoulli import TSBanditRescaledBernoulli
 from utils.folder_management import handle_folder_creation
 from environments.BernoulliDiscreteBanditEnvironment import BernoulliDiscreteBanditEnv
 from utils.stats.BernoulliDistribution import BernoulliDistribution
@@ -69,7 +69,7 @@ def get_bandit(args) -> DiscreteBandit:
     bandit_name = args.bandit_name
 
     if bandit_name == "TS":
-        bandit = TSBandit(n_arms=N_ARMS)
+        bandit = TSBanditRescaledBernoulli(n_arms=N_ARMS)
     elif bandit_name == "UCB1":
         bandit = UCB1Bandit(n_arms=N_ARMS)
     elif bandit_name == "UCB1M":
