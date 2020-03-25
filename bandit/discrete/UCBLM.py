@@ -61,10 +61,6 @@ class UCBLMBandit(DiscreteBandit):
         # update the number of times the arm has been pulled
         self.round_per_arm[pulled_arm] += 1
 
-        for i in range(self.n_arms):
-            print("{}".format(self.round_per_arm[i]), end=" ")
-        print("\n")
-
         # update the expected bernoulli of the pulled arm
         if reward != 0:
             self.expected_bernoulli[pulled_arm] = (self.expected_bernoulli[pulled_arm] *
