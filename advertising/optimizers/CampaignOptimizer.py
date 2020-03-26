@@ -8,6 +8,8 @@ class CampaignOptimizer(object):
     """
     Helper class that contains all the function used to optimize the combinatorial problem, i.e. campaign advertising
     problem
+     - It is the implementation of the DP algorithm found in
+       https://home.deib.polimi.it/trovo/01papers/nuara2018combinatorial.pdf with some modifications
     """
 
     @classmethod
@@ -17,8 +19,8 @@ class CampaignOptimizer(object):
 
         :param campaign: the campaign to be optimized
         :return:
-            - the optimization matrix (N+1) x M containing, for each pair (budget, set of sub-campaign), the maximum number
-              of clicks achieavable
+            - the optimization matrix (N+1) x M containing, for each pair (budget, set of sub-campaign), the maximum
+              number of clicks achievable
             - the maximum indices (N+1) x M related to the optimization matrix containing, for each pair
               (budget, set of sub-campaign), the index of the best budget for the new added sub-campaign w.r.t. previous
               set of sub-campaign (i.e. row)
@@ -27,7 +29,6 @@ class CampaignOptimizer(object):
         optimization_matrix = np.zeros(shape=(campaign.get_n_sub_campaigns() + 1, len(campaign.get_budgets())))
         max_idx_matrix = np.full_like(optimization_matrix, fill_value=-1, dtype=np.int)
         prev_row = 0
-        # cum_budget = self._campaign.get_cum_budget()
         clicks_matrix = campaign.get_sub_campaigns()
         for row in range(1, optimization_matrix.shape[0]):
             temp_clicks = clicks_matrix[row - 1][::-1]
@@ -49,7 +50,7 @@ class CampaignOptimizer(object):
 
         :param campaign: the campaign of which you want to find the best allocation of budgets
         :return:
-            - maximum number of clicks achieavable with the best allocation of budgets
+            - maximum number of clicks achievable with the best allocation of budgets
             - best allocation of budgets for each sub-campaign
         """
         optimization_matrix, max_idx_matrix = cls._optimize(campaign)

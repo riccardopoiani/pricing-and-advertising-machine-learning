@@ -12,7 +12,6 @@ class DiscreteGaussianRegressor(DiscreteRegressor):
         super().__init__(arms, init_std_dev)
 
     def update_model(self, pulled_arm: int, reward: float):
-
         self.pulled_arm_list.append(pulled_arm)
         self.rewards_per_arm[pulled_arm].append(reward)
 

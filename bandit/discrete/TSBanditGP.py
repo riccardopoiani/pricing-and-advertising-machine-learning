@@ -10,8 +10,8 @@ class TSBanditGP(DiscreteBandit):
     Gaussian Process Thompson Sampling Bandit for gaussian distributions
     """
 
-    def __init__(self, arms: List[float], init_std_dev: float = 1e3, alpha: float = 10, n_restarts_optimizer: int = 5,
-                 normalized=True):
+    def __init__(self, arms: List[float], init_std_dev: float = 1e3, alpha: float = 10,
+                 n_restarts_optimizer: int = 5, normalized=True):
         """
         :param arms: list of non-normalized arms that can be pulled
         :param init_std_dev: initial value of the standard deviation for the prior

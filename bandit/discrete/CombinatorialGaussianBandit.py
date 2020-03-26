@@ -11,7 +11,7 @@ class CombinatorialGaussianBandit(CombinatorialBandit):
     the sub-campaign
     """
 
-    def __init__(self, campaign, init_std_dev: float = 1e3):
+    def __init__(self, campaign, init_std_dev: float = 1e6):
         super().__init__(campaign)
         self.model_list: List[DiscreteRegressor] = [DiscreteGaussianRegressor(list(self.campaign.get_budgets()),
                                                                               init_std_dev)

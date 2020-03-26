@@ -15,7 +15,7 @@ from advertising.data_structure.Campaign import Campaign
 from bandit.discrete.CombinatorialBandit import CombinatorialBandit
 from bandit.discrete.CombinatorialGPBandit import CombinatorialGPBandit
 from bandit.discrete.CombinatorialGaussianBandit import CombinatorialGaussianBandit
-from environments.AdEnvironment import AdEnvironment
+from environments.AdvertisingEnvironment import AdvertisingEnvironment
 from environments.Settings.AdvertisingScenario import PolynomialAdvertisingScenario
 
 from environments.Settings import EnvironmentSettings
@@ -26,31 +26,30 @@ N_ROUNDS = 100
 BASIC_OUTPUT_FOLDER = "../report/project_point_2/"
 EXPERIMENT_DEFAULT_SETTING = "POLYNOMIAL_ADVERTISING_SCENARIO"
 
+# Bandit parameters
+ALPHA = 100
+N_RESTARTS_OPTIMIZERS = 10
+
 # Advertising settings
 CUM_BUDGET = 100
-MIN_BUDGET = 0
-MAX_BUDGET = CUM_BUDGET
 N_SUBCAMPAIGNS = 3
-N_ARMS = 21
+N_ARMS = 11
 
 MAX_N_CLICKS = [3000, 2000, 1500]
 LINEAR_COEFFICIENTS = [(30 + i * 10) for i in range(N_SUBCAMPAIGNS)]
 EXPONENTS = [1] * N_SUBCAMPAIGNS
-# BIASES = [1000 * (N_SUBCAMPAIGNS + 1 - i) for i in range(1, N_SUBCAMPAIGNS + 1)]
 BIASES = [0] * N_SUBCAMPAIGNS
-SIGMAS = [1] * N_SUBCAMPAIGNS
+SIGMAS = [10] * N_SUBCAMPAIGNS
 BEST_BUDGETS = [20.0, 50.0, 30.0]
-
-# 3*x1 + 0 = 300 max
-# 4*x2 + 0 = 400 max
-# 5*x3 + 0 = 500 max
-
 
 POLYNOMIAL_ADVERTISING_SCENARIO_KWARGS = {
     "linear_coefficients": LINEAR_COEFFICIENTS,
     "exponents": EXPONENTS,
     "biases": BIASES,
-    "max_n_clicks_list": MAX_N_CLICKS
+    "max_n_clicks_list": MAX_N_CLICKS,
+    "n_clicks_function_std": SIGMAS,
+    "cum_budget": CUM_BUDGET,
+    "n_subcampaigns": N_SUBCAMPAIGNS
 }
 
 
@@ -65,12 +64,6 @@ def get_arguments():
     # Ads setting
     parser.add_argument("-bud", "--cum_budget", default=CUM_BUDGET,
                         help="Cumulative budget to be used for the simulation",
-                        type=float)
-    parser.add_argument("-min_bud", "--min_budget", default=MIN_BUDGET,
-                        help="Minimum budget to be used for the simulation",
-                        type=float)
-    parser.add_argument("-max_bud", "--max_budget", default=MAX_BUDGET,
-                        help="Maximum budget to be used for the simulation",
                         type=float)
     parser.add_argument("-n_sub", "--n_subcampaigns", default=N_SUBCAMPAIGNS,
                         help="Number of subcampaigns to be used for the simulation",
@@ -104,8 +97,8 @@ def get_scenario_kwargs(scenario_name: str):
         return POLYNOMIAL_ADVERTISING_SCENARIO_KWARGS
 
 
-def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e3, alpha: float = 10,
-               n_restarts_optimizer: int = 5) -> CombinatorialBandit:
+def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e6, alpha: float = ALPHA,
+               n_restarts_optimizer: int = N_RESTARTS_OPTIMIZERS) -> CombinatorialBandit:
     """
     Retrieve the bandit to be used in the experiment according to the bandit name
 
@@ -128,14 +121,15 @@ def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e3, 
 
 
 def main(args):
-    number_of_clicks_per_budget_list = EnvironmentSettings.EnvironmentManager.get_setting(args.scenario_name,
-                                                                                          **get_scenario_kwargs(
-                                                                                              args.scenario_name))
+    _, n_clicks_list = EnvironmentSettings.EnvironmentManager.get_setting(args.scenario_name,
+                                                                          **get_scenario_kwargs(
+                                                                              args.scenario_name))
 
-    env = AdEnvironment(list(number_of_clicks_per_budget_list), SIGMAS)
+    env = AdvertisingEnvironment(n_clicks_list)
 
     campaign = Campaign(args.n_subcampaigns, args.cum_budget, args.n_arms)
     bandit = get_bandit(bandit_name=args.bandit_name, campaign=campaign)
+    budget_allocation = [0, 0, 0]
 
     for t in range(0, args.n_rounds):
         # Choose arm
@@ -198,7 +192,7 @@ if args.save_result:
     fd.write("Number of arms: {}\n".format(args.n_arms))
     fd.write("Number of runs: {}\n".format(args.n_runs))
     fd.write("Horizon: {}\n".format(args.n_rounds))
-    fd.write("Bandit algorithm: {}\n\n".format(args.bandit_name))
+    fd.write("Bandit algorithm: {}\n".format(args.bandit_name))
     fd.write("Scenario name {}\n".format(args.scenario_name))
 
     fd.write("Polynomial Advertising Scenario {}\n\n".format(POLYNOMIAL_ADVERTISING_SCENARIO_KWARGS))
@@ -208,13 +202,16 @@ if args.save_result:
     fd.close()
 
     rewards = np.mean(rewards, axis=0)
-    number_of_clicks_per_budget_list = EnvironmentSettings.EnvironmentManager.get_setting(args.scenario_name,
-                                                                                          **get_scenario_kwargs(
-                                                                                              args.scenario_name))
+    _, n_clicks_list = EnvironmentSettings.EnvironmentManager.get_setting(args.scenario_name,
+                                                                          **get_scenario_kwargs(
+                                                                              args.scenario_name))
+    env = AdvertisingEnvironment(n_clicks_list)
     avg_regrets = []
     for reward in rewards:
-        opt = max(reward, sum(number_of_clicks_per_budget_list[i](BEST_BUDGETS[i])
-                              for i in range(int(args.n_subcampaigns))))
+        # The clairvoyance algorithm reward is the best reward he can get by sampling the environment
+        # from the best budget allocation
+        # TODO: there is a problem, since the function is random, the regret at time t can be negative
+        opt = sum(env.round(BEST_BUDGETS))
         avg_regrets.append(opt - reward)
     cum_regrets = np.cumsum(avg_regrets)
 

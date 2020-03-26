@@ -12,9 +12,10 @@ class CombinatorialGPBandit(CombinatorialBandit):
     the sub-campaign
     """
 
-    def __init__(self, campaign: Campaign, init_std_dev: float = 1e3, alpha: float = 10, n_restarts_optimizer: int = 5):
+    def __init__(self, campaign: Campaign, init_std_dev: float = 1e6, alpha: float = 10,
+                 n_restarts_optimizer: int = 10):
         super().__init__(campaign)
-        self.model_list: List[DiscreteRegressor] = [DiscreteGPRegressor(list(campaign.get_budgets()), init_std_dev,
-                                                                        alpha, n_restarts_optimizer)
-                                                    for _ in range(self.campaign.get_n_sub_campaigns())]
-
+        self.model_list: List[DiscreteRegressor] = [
+            DiscreteGPRegressor(list(campaign.get_budgets()), init_std_dev, alpha, n_restarts_optimizer,
+                                normalized=True)
+            for _ in range(self.campaign.get_n_sub_campaigns())]

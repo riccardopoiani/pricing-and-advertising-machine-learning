@@ -1,33 +1,36 @@
 import math
 from typing import List, Callable
+import numpy as np
 
 from environments.Settings.Scenario import Scenario
+from utils.stats.StochasticFunction import IStochasticFunction, BoundedLambdaStochasticFunction
 
 
 class PolynomialAdvertisingScenario(Scenario):
     @staticmethod
     def get_scenario(linear_coefficients: List[float], exponents: List[float], biases: List[float],
-                     max_n_clicks_list: List[float]) -> List[Callable]:
-        number_of_clicks_per_budget = [(lambda coeff, exp, bias, max_n_clicks:
-                                        (lambda budget: min(coeff * budget ** exp + bias, max_n_clicks)))
-                                       (coeff, exp, bias, max_n_clicks)
-                                       for coeff, exp, bias, max_n_clicks in
-                                       zip(linear_coefficients, exponents, biases, max_n_clicks_list)]
-        return number_of_clicks_per_budget
+                     max_n_clicks_list: List[int], n_clicks_function_std: List[float], cum_budget: float,
+                     n_subcampaigns: int = 3) -> (List[IStochasticFunction], List[IStochasticFunction]):
+        assert len(linear_coefficients) == n_subcampaigns
+        assert len(exponents) == n_subcampaigns
+        assert len(biases) == n_subcampaigns
+        assert len(max_n_clicks_list) == n_subcampaigns
+        assert len(n_clicks_function_std) == n_subcampaigns
+
+        def generate_n_clicks_function(coeff: float, exp: float, bias: float, max_n_clicks: float, n_clicks_std: float):
+            return lambda budget: int(np.random.normal(min((budget * coeff) ** exp + bias, max_n_clicks),
+                                                       n_clicks_std))
+
+        functions_lambda = [
+            generate_n_clicks_function(linear_coefficients[i], exponents[i], biases[i], max_n_clicks_list[i],
+                                       n_clicks_function_std[i])
+            for i in range(len(linear_coefficients))
+        ]
+
+        n_clicks_function: List[IStochasticFunction] = [BoundedLambdaStochasticFunction(f=functions_lambda[i])
+                                                        for i in range(n_subcampaigns)]
+        return [], n_clicks_function
 
     @staticmethod
     def get_scenario_name() -> str:
         return "POLYNOMIAL_ADVERTISING_SCENARIO"
-
-
-class LogarithmicAdvertisingScenario(Scenario):
-    @staticmethod
-    def get_scenario(linear_coefficients: List[float], biases: List[float]) -> List[Callable]:
-        number_of_clicks_per_budget = []
-        for coeff, bias in zip(linear_coefficients, biases):
-            number_of_clicks_per_budget.append(lambda budget: coeff * math.log(budget) + bias)
-        return number_of_clicks_per_budget
-
-    @staticmethod
-    def get_scenario_name() -> str:
-        return "LOGARITHMIC_ADVERTISING_SCENARIO"

@@ -1,10 +1,4 @@
-<<<<<<< Updated upstream
-import numpy as np
-
-from typing import List, Tuple
-=======
 from typing import List
->>>>>>> Stashed changes
 
 from environments.Settings.AdvertisingScenario import PolynomialAdvertisingScenario
 from environments.Settings.Scenario import Scenario, LinearPriceGaussianVisitsScenario
@@ -16,7 +10,7 @@ class EnvironmentManager(object):
     scenario_list: List[Scenario] = [LinearPriceGaussianVisitsScenario, PolynomialAdvertisingScenario]
 
     @staticmethod
-    def get_setting(setting_name, **kwargs) -> Tuple:
+    def get_setting(setting_name, **kwargs) -> (List[IStochasticFunction], List[IStochasticFunction]):
         """
         Retrieve a setting on the basis of its name
 
