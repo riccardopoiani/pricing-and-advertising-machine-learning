@@ -86,9 +86,9 @@ class LinearPriceGaussianVisitsScenario(Scenario):
 
         # Number of visits probabilities
         nov_lambda = [
-            lambda budget: lambda budget: np.clip(int(np.random.normal(budget * budget_scale[i], budget_std[i])),
-                                                  min_budget[i], max_budget[i])
-            for i in range(n_classes)]
+            lambda i: (lambda budget: np.clip(int(np.random.normal(budget * budget_scale[i], budget_std[i])),
+                                              min_budget[i], max_budget[i]))(idx)
+            for idx in range(n_classes)]
         nov: List[IStochasticFunction] = [BoundedLambdaStochasticFunction(min_value=min_n_visit[i],
                                                                           max_value=max_n_visit[i],
                                                                           f=nov_lambda[i])
