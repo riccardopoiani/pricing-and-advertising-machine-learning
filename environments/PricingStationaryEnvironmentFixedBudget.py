@@ -1,8 +1,9 @@
-import numpy as np
 from typing import List
 
+import numpy as np
+
 from environments.Environment import Environment
-from utils.stats.StochasticFunction import IStochasticFunction
+from environments.Phase import Phase
 
 
 class PricingStationaryEnvironmentFixedBudget(Environment):
@@ -10,23 +11,20 @@ class PricingStationaryEnvironmentFixedBudget(Environment):
     Environment for the pricing scenario
     """
 
-    def __init__(self, conversion_rate_probabilities: List[IStochasticFunction],
-                 number_of_visit: List[IStochasticFunction], fixed_budget):
+    def __init__(self, n_subcampaigns: int, phases: List[Phase], fixed_budget_allocation: List[float]):
         """
         Create a pricing stationary environment with a fixed budget
 
-        :param conversion_rate_probabilities: distributions of the conversions rate probabilities given the price.
-        One element for each class of users
-        :param number_of_visit: distributions of the number of visits, given the budget. One element for each
-        class of users
-        :param fixed_budget: fixed budget to be used in order to simulate the number of visits
+
+        :param fixed_budget_allocation: fixed budget allocation to be used in order to simulate the number of visits
         """
-        super().__init__(conversion_rate_probabilities=conversion_rate_probabilities,
-                         number_of_visit=number_of_visit)
+        assert len(fixed_budget_allocation) == n_subcampaigns
+
+        super().__init__(n_subcampaigns, phases)
         self.sampled_users: List = []
-        self.fixed_budget = fixed_budget
+        self.fixed_budget_allocation = fixed_budget_allocation
         self.current_user_class = 0
-        self.number_of_days = 1
+        self.current_phase = 0
 
     def round(self, price):
         """
@@ -35,7 +33,7 @@ class PricingStationaryEnvironmentFixedBudget(Environment):
         :param price: price used for the user
         :return: 1 if the users has bought the item, 0 otherwise
         """
-        return self.crp_list[self.current_user_class].draw_sample(x=price)
+        return self.phases[self.current_phase].get_crp(class_idx=self.current_user_class, price=price)
 
     def get_observation(self) -> int:
         """
@@ -44,15 +42,17 @@ class PricingStationaryEnvironmentFixedBudget(Environment):
         :return: index of the class of the users that is arrived on the website
         """
         # Check if the day is over: in this case, samples users from the number of visits distribution
+        self.current_phase = self.get_phase_index(self.phases, self.day_t)
         while len(self.sampled_users) == 0:
-            for i, user_class in enumerate(self.number_of_visit_list):
-                n_users = int(user_class.draw_sample(x=self.fixed_budget))
-                self.sampled_users.extend([i] * n_users)
+            n_users_list = self.phases[self.current_phase].\
+                get_all_n_clicks(budget_allocation=self.fixed_budget_allocation)
+            for i in range(len(n_users_list)):
+                self.sampled_users.extend([i] * int(n_users_list[i]))
             np.random.shuffle(self.sampled_users)
 
-        self.number_of_days += 1
+        self.day_t += 1
         self.current_user_class = self.sampled_users.pop()
         return self.current_user_class
 
     def get_number_of_days(self):
-        return self.number_of_days
+        return self.day_t

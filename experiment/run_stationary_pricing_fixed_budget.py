@@ -9,6 +9,7 @@ from joblib import Parallel, delayed
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
+from environments.Phase import Phase
 from environments.PricingStationaryEnvironmentFixedBudget import PricingStationaryEnvironmentFixedBudget
 from bandit.discrete import DiscreteBandit
 from bandit.discrete.EXP3Bandit import EXP3Bandit
@@ -17,13 +18,13 @@ from bandit.discrete.LinPHE import LinPHE
 from bandit.discrete.TSBanditRescaledBernoulli import TSBanditRescaledBernoulli
 from bandit.discrete.UCB1Bandit import UCB1Bandit
 from environments.Settings import EnvironmentSettings
-from environments.Settings.Scenario import LinearPriceGaussianVisitsScenario
+from environments.Settings.Scenario import LinearPriceLinearClickScenario
 from utils.folder_management import handle_folder_creation
 
 # Basic default settings
 N_ROUNDS = 1000
 BASIC_OUTPUT_FOLDER = "../report/project_point_4/"
-EXPERIMENT_DEFAULT_SETTING = "LINEAR_PRICE_GAUSSIAN_VISIT"
+EXPERIMENT_DEFAULT_SETTING = "LINEAR_PRICE_LINEAR_CLICK"
 
 # Pricing settings
 MIN_PRICE = 0
@@ -39,23 +40,17 @@ DISCRETIZATION_TYPE = ['UNIFORM']
 PRICE_MULTIPLIER = [1, 2, 3]
 BUDGET_SCALE = [0.1, 0.2, 0.3]
 BUDGET_STD = [10, 5, 1]
-MIN_BUDGET = [0, 0, 0]
-MAX_BUDGET = [None, None, None]
-MIN_NUM_VISIT = [0, 0, 0]
-MAX_NUM_VISIT = [None, None, None]
-N_CLASSES = 3
+MAX_N_CLICKS_LIST = [None, None, None]
+N_SUBCAMPAIGNS = 3
 MIN_PRICE_LIST = [MIN_PRICE, MIN_PRICE, MIN_PRICE]
 MAX_PRICE_LIST = [MAX_PRICE, MAX_PRICE, MAX_PRICE]
 LINEAR_PRICE_GAUSSIAN_VISIT_KWARGS = {'price_multiplier': PRICE_MULTIPLIER,
-                                      'budget_scale': BUDGET_SCALE,
+                                      'budget_multiplier': BUDGET_SCALE,
                                       'budget_std': BUDGET_SCALE,
                                       'min_price': MIN_PRICE_LIST,
                                       'max_price': MAX_PRICE_LIST,
-                                      'min_budget': MIN_BUDGET,
-                                      'max_budget': MAX_BUDGET,
-                                      'min_n_visit': MIN_NUM_VISIT,
-                                      'max_n_visit': MAX_NUM_VISIT,
-                                      'n_classes': N_CLASSES}
+                                      'max_n_clicks_list': MAX_N_CLICKS_LIST,
+                                      'n_subcampaigns': N_SUBCAMPAIGNS}
 
 
 def get_arguments():
@@ -108,7 +103,7 @@ def get_prices(args):
 
 
 def get_env_kwargs(env_name: str):
-    if env_name == LinearPriceGaussianVisitsScenario.get_scenario_name():
+    if env_name == LinearPriceLinearClickScenario.get_scenario_name():
         return LINEAR_PRICE_GAUSSIAN_VISIT_KWARGS
 
 
@@ -145,12 +140,11 @@ def get_bandit(args, prices) -> DiscreteBandit:
 
 
 def main(args):
-    cpr, nov = EnvironmentSettings.EnvironmentManager.get_setting(args.scenario_name,
-                                                                  **get_env_kwargs(args.scenario_name))
-
-    env = PricingStationaryEnvironmentFixedBudget(conversion_rate_probabilities=cpr,
-                                                  number_of_visit=nov,
-                                                  fixed_budget=args.budget)
+    cpr, n_clicks = EnvironmentSettings.EnvironmentManager.get_setting(args.scenario_name,
+                                                                       **get_env_kwargs(args.scenario_name))
+    phase = Phase(args.n_rounds, n_clicks, cpr)
+    env = PricingStationaryEnvironmentFixedBudget(N_SUBCAMPAIGNS, [phase],
+                                                  fixed_budget_allocation=[args.budget] * N_SUBCAMPAIGNS)
 
     prices = get_prices(args=args)
     bandit = get_bandit(args=args, prices=prices)

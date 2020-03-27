@@ -1,15 +1,17 @@
 from typing import List
 
 from environments.Environment import Environment
-from utils.stats.StochasticFunction import IStochasticFunction
+from environments.Phase import Phase
 
 
 class AdvertisingEnvironment(Environment):
 
-    def __init__(self, n_clicks_list: List[IStochasticFunction]):
-        super(AdvertisingEnvironment, self).__init__([], n_clicks_list)
+    def __init__(self, n_subcampaigns, phases: List[Phase]):
+        super(AdvertisingEnvironment, self).__init__(n_subcampaigns, phases)
 
     def round(self, budget_allocation: List[float]) -> List[float]:
-        rewards = [self.number_of_visit_list[budget_idx].draw_sample(budget_allocation[budget_idx])
-                   for budget_idx in range(len(budget_allocation))]
+        self.day_t += 1
+
+        phase_idx = self.get_phase_index(self.phases, self.day_t)
+        rewards = self.phases[phase_idx].get_all_n_clicks(budget_allocation=budget_allocation)
         return rewards

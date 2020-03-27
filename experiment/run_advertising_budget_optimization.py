@@ -16,19 +16,24 @@ from bandit.discrete.CombinatorialBandit import CombinatorialBandit
 from bandit.discrete.CombinatorialGPBandit import CombinatorialGPBandit
 from bandit.discrete.CombinatorialGaussianBandit import CombinatorialGaussianBandit
 from environments.AdvertisingEnvironment import AdvertisingEnvironment
-from environments.Settings.AdvertisingScenario import PolynomialAdvertisingScenario
-
+from environments.Settings.Scenario import LinearPriceLinearClickScenario
+from environments.Phase import Phase
 from environments.Settings import EnvironmentSettings
 from utils.folder_management import handle_folder_creation
 
 # Basic default settings
 N_ROUNDS = 100
 BASIC_OUTPUT_FOLDER = "../report/project_point_2/"
-EXPERIMENT_DEFAULT_SETTING = "POLYNOMIAL_ADVERTISING_SCENARIO"
+EXPERIMENT_DEFAULT_SETTING = "LINEAR_PRICE_LINEAR_CLICK"
 
 # Bandit parameters
 ALPHA = 100
 N_RESTARTS_OPTIMIZERS = 10
+
+# Pricing settings (useless for this scenario)
+PRICE_MULTIPLIER = [1, 2, 3]
+MIN_PRICE_LIST = [0, 0, 0]
+MAX_PRICE_LIST = [10, 10, 10]
 
 # Advertising settings
 CUM_BUDGET = 100
@@ -36,21 +41,17 @@ N_SUBCAMPAIGNS = 3
 N_ARMS = 11
 
 MAX_N_CLICKS = [3000, 2000, 1500]
-LINEAR_COEFFICIENTS = [(30 + i * 10) for i in range(N_SUBCAMPAIGNS)]
-EXPONENTS = [1] * N_SUBCAMPAIGNS
-BIASES = [0] * N_SUBCAMPAIGNS
-SIGMAS = [10] * N_SUBCAMPAIGNS
+BUDGET_SCALE = [(30 + i * 10) for i in range(N_SUBCAMPAIGNS)]
+BUDGET_STD = [10] * N_SUBCAMPAIGNS
 BEST_BUDGETS = [20.0, 50.0, 30.0]
 
-POLYNOMIAL_ADVERTISING_SCENARIO_KWARGS = {
-    "linear_coefficients": LINEAR_COEFFICIENTS,
-    "exponents": EXPONENTS,
-    "biases": BIASES,
-    "max_n_clicks_list": MAX_N_CLICKS,
-    "n_clicks_function_std": SIGMAS,
-    "cum_budget": CUM_BUDGET,
-    "n_subcampaigns": N_SUBCAMPAIGNS
-}
+LINEAR_PRICE_GAUSSIAN_VISIT_KWARGS = {'price_multiplier': PRICE_MULTIPLIER,
+                                      'budget_multiplier': BUDGET_SCALE,
+                                      'budget_std': BUDGET_SCALE,
+                                      'min_price': MIN_PRICE_LIST,
+                                      'max_price': MAX_PRICE_LIST,
+                                      'max_n_clicks_list': MAX_N_CLICKS,
+                                      'n_subcampaigns': N_SUBCAMPAIGNS}
 
 
 def get_arguments():
@@ -93,8 +94,8 @@ def get_arguments():
 
 
 def get_scenario_kwargs(scenario_name: str):
-    if scenario_name == PolynomialAdvertisingScenario.get_scenario_name():
-        return POLYNOMIAL_ADVERTISING_SCENARIO_KWARGS
+    if scenario_name == LinearPriceLinearClickScenario.get_scenario_name():
+        return LINEAR_PRICE_GAUSSIAN_VISIT_KWARGS
 
 
 def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e6, alpha: float = ALPHA,
@@ -121,11 +122,11 @@ def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e6, 
 
 
 def main(args):
-    _, n_clicks_list = EnvironmentSettings.EnvironmentManager.get_setting(args.scenario_name,
-                                                                          **get_scenario_kwargs(
-                                                                              args.scenario_name))
-
-    env = AdvertisingEnvironment(n_clicks_list)
+    crp, n_clicks = EnvironmentSettings.EnvironmentManager.get_setting(args.scenario_name,
+                                                                       **get_scenario_kwargs(
+                                                                           args.scenario_name))
+    phase = Phase(args.n_rounds, n_clicks, crp)
+    env = AdvertisingEnvironment(args.n_subcampaigns, [phase])
 
     campaign = Campaign(args.n_subcampaigns, args.cum_budget, args.n_arms)
     bandit = get_bandit(bandit_name=args.bandit_name, campaign=campaign)
@@ -195,22 +196,21 @@ if args.save_result:
     fd.write("Bandit algorithm: {}\n".format(args.bandit_name))
     fd.write("Scenario name {}\n".format(args.scenario_name))
 
-    fd.write("Polynomial Advertising Scenario {}\n\n".format(POLYNOMIAL_ADVERTISING_SCENARIO_KWARGS))
+    fd.write("Polynomial Advertising Scenario {}\n\n".format(LINEAR_PRICE_GAUSSIAN_VISIT_KWARGS))
 
     fd.write("Best Budget Allocation {}\n".format(str(best_allocation)))
 
     fd.close()
 
     rewards = np.mean(rewards, axis=0)
-    _, n_clicks_list = EnvironmentSettings.EnvironmentManager.get_setting(args.scenario_name,
-                                                                          **get_scenario_kwargs(
-                                                                              args.scenario_name))
-    env = AdvertisingEnvironment(n_clicks_list)
+    crp, n_clicks = EnvironmentSettings.EnvironmentManager.get_setting(args.scenario_name,
+                                                                       **get_scenario_kwargs(
+                                                                           args.scenario_name))
+    env = AdvertisingEnvironment(args.n_subcampaigns, [Phase(args.n_rounds, n_clicks, crp)])
     avg_regrets = []
     for reward in rewards:
         # The clairvoyance algorithm reward is the best reward he can get by sampling the environment
         # from the best budget allocation
-        # TODO: there is a problem, since the function is random, the regret at time t can be negative
         opt = sum(env.round(BEST_BUDGETS))
         avg_regrets.append(opt - reward)
     cum_regrets = np.cumsum(avg_regrets)

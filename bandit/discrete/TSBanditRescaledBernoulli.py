@@ -9,7 +9,7 @@ class TSBanditRescaledBernoulli(DiscreteBandit):
     """
 
     def __init__(self, n_arms: int, prices: np.array):
-        super(DiscreteBandit, self).__init__(n_arms=n_arms)
+        super().__init__(n_arms=n_arms)
         self.beta_distribution = np.ones((n_arms, 2))
         self.prices = prices
 

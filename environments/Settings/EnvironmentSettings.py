@@ -1,13 +1,13 @@
 from typing import List
 
 from environments.Settings.AdvertisingScenario import PolynomialAdvertisingScenario
-from environments.Settings.Scenario import Scenario, LinearPriceGaussianVisitsScenario
+from environments.Settings.Scenario import Scenario, LinearPriceLinearClickScenario
 from utils.stats.StochasticFunction import IStochasticFunction
 
 
 class EnvironmentManager(object):
 
-    scenario_list: List[Scenario] = [LinearPriceGaussianVisitsScenario, PolynomialAdvertisingScenario]
+    scenario_list: List[Scenario] = [LinearPriceLinearClickScenario, PolynomialAdvertisingScenario]
 
     @staticmethod
     def get_setting(setting_name, **kwargs) -> (List[IStochasticFunction], List[IStochasticFunction]):
