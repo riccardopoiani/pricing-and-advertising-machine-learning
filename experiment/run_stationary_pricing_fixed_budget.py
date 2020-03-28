@@ -63,7 +63,9 @@ def get_arguments():
     parser.add_argument("-b", "--bandit_name", help="Name of the bandit to be used in the experiment")
     parser.add_argument("-gamma", "--gamma",
                         help="Parameter for tuning the desire to pick an action uniformly at random",
-                        type=float, default=0.0)
+                        type=float, default=0.1)
+    parser.add_argument("-crp_ub", "--crp_upper_bound", help="Upper bound of the conversion rate probability",
+                        type=float, default=0.2)
     parser.add_argument("-a", "--perturbation", help="Parameter for perturbing the history", type=float, default=0.0)
     parser.add_argument("-l", "--regularization", help="Regularization parameter", type=float, default=0.0)
 
