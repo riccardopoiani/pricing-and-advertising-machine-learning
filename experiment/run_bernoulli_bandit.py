@@ -73,11 +73,11 @@ def get_bandit(args) -> DiscreteBandit:
     elif bandit_name == "UCB1":
         bandit = UCB1Bandit(n_arms=N_ARMS)
     elif bandit_name == "UCB1M":
-        bandit = UCB1MBandit(n_arms=N_ARMS, price_list=PRICE_LIST)
+        bandit = UCB1MBandit(n_arms=N_ARMS, prices=PRICE_LIST)
     elif bandit_name == "UCBL":
-        bandit = UCBLBandit(n_arms=N_ARMS, crp_upper_bound=args.crp_upper_bound, price_list=PRICE_LIST)
+        bandit = UCBLBandit(n_arms=N_ARMS, crp_upper_bound=args.crp_upper_bound, prices=PRICE_LIST)
     elif bandit_name == "UCBLM":
-        bandit = UCBLMBandit(n_arms=N_ARMS, crp_upper_bound=args.crp_upper_bound, price_list=PRICE_LIST)
+        bandit = UCBLMBandit(n_arms=N_ARMS, crp_upper_bound=args.crp_upper_bound, prices=PRICE_LIST)
     elif bandit_name == "EXP3":
         bandit = EXP3Bandit(n_arms=N_ARMS, gamma=args.gamma)
     elif bandit_name == "GIRO":

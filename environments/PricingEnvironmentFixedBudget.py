@@ -6,7 +6,7 @@ from environments.Environment import Environment
 from environments.Phase import Phase
 
 
-class PricingStationaryEnvironmentFixedBudget(Environment):
+class PricingEnvironmentFixedBudget(Environment):
     """
     Environment for the pricing scenario
     """

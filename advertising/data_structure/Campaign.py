@@ -37,4 +37,3 @@ class Campaign(object):
 
     def get_n_sub_campaigns(self) -> int:
         return self._n_sub_campaigns
-

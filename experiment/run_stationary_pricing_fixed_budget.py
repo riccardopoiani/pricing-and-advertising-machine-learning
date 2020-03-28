@@ -9,27 +9,28 @@ from joblib import Parallel, delayed
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
-from environments.PricingStationaryEnvironmentFixedBudget import PricingStationaryEnvironmentFixedBudget
+from environments.PricingEnvironmentFixedBudget import PricingEnvironmentFixedBudget
 from bandit.discrete import DiscreteBandit
 from bandit.discrete.EXP3Bandit import EXP3Bandit
-from bandit.discrete.GIROBernoulliBandit import GIROBernoulliBandit
-from bandit.discrete.LinPHE import LinPHE
 from bandit.discrete.TSBanditRescaledBernoulli import TSBanditRescaledBernoulli
+from bandit.discrete.UCB1MBandit import UCB1MBandit
+from bandit.discrete.UCBLBandit import UCBLBandit
+from bandit.discrete.UCBLM import UCBLMBandit
 from bandit.discrete.UCB1Bandit import UCB1Bandit
 from environments.Settings.EnvironmentManager import EnvironmentManager
 from utils.folder_management import handle_folder_creation
 
 # Basic default settings
-N_ROUNDS = 1000
+N_ROUNDS = 1000000
 BASIC_OUTPUT_FOLDER = "../report/project_point_4/"
 
 # Pricing settings
 SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "resources"
-MIN_PRICE = 3
-MAX_PRICE = 10
+MIN_PRICE = 15
+MAX_PRICE = 25
 N_ARMS = 10
 DEFAULT_DISCRETIZATION = "UNIFORM"
-FIXED_BUDGET = 50
+FIXED_BUDGET = 5000 / 3
 
 
 def get_arguments():
@@ -91,22 +92,17 @@ def get_bandit(args, prices) -> DiscreteBandit:
     bandit_name = args.bandit_name
 
     if bandit_name == "TS":
-        bandit = TSBanditRescaledBernoulli(n_arms=args.n_arms, prices=prices)
+        bandit = TSBanditRescaledBernoulli(n_arms=N_ARMS, prices=prices)
     elif bandit_name == "UCB1":
-        bandit = UCB1Bandit(n_arms=args.n_arms)
+        bandit = UCB1Bandit(n_arms=N_ARMS)
+    elif bandit_name == "UCB1M":
+        bandit = UCB1MBandit(n_arms=N_ARMS, prices=prices)
+    elif bandit_name == "UCBL":
+        bandit = UCBLBandit(n_arms=N_ARMS, crp_upper_bound=args.crp_upper_bound, prices=prices)
+    elif bandit_name == "UCBLM":
+        bandit = UCBLMBandit(n_arms=N_ARMS, crp_upper_bound=args.crp_upper_bound, prices=prices)
     elif bandit_name == "EXP3":
-        bandit = EXP3Bandit(n_arms=args.n_arms, gamma=args.gamma)
-    elif bandit_name == "GIRO":
-        bandit = GIROBernoulliBandit(n_arms=args.n_arms, a=args.perturbation, prices=prices)
-    elif bandit_name == "LINPHE":
-        features = np.zeros(shape=(args.n_arms, 2))
-        for i in range(args.n_arms):
-            features[i, 0] = prices[i]
-            features[i, 1] = 1
-
-        bandit = LinPHE(n_arms=args.n_arms, perturbation=args.perturbation,
-                        regularization=args.regularization,
-                        features=features, features_dim=2, prices=prices)
+        bandit = EXP3Bandit(n_arms=N_ARMS, gamma=args.gamma)
     else:
         raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
 
@@ -116,8 +112,8 @@ def get_bandit(args, prices) -> DiscreteBandit:
 def main(args):
     phases = EnvironmentManager.load_scenario(args.scenario_name)
     n_subcampaigns = phases[0].get_n_subcampaigns()
-    env = PricingStationaryEnvironmentFixedBudget(n_subcampaigns, phases,
-                                                  fixed_budget_allocation=[args.budget] * n_subcampaigns)
+    env = PricingEnvironmentFixedBudget(n_subcampaigns, phases,
+                                        fixed_budget_allocation=[args.budget] * n_subcampaigns)
 
     prices = get_prices(args=args)
     bandit = get_bandit(args=args, prices=prices)
@@ -185,3 +181,34 @@ if args.save_result:
     fd.write("Gamma parameter (EXP3) {}\n".format(args.gamma))
 
     fd.close()
+
+
+import matplotlib.pyplot as plt
+
+mean_reward = np.zeros(args.n_rounds)
+for exp in results:
+    for t in range(0, args.n_rounds):
+        mean_reward[t] += exp[t]
+mean_reward = mean_reward / args.n_runs
+# DRAW HORIZONTAL LINE INDICATING THE OPTIMAL REWARD
+optimal_reward = 0.2
+plt.axhline(y=optimal_reward)
+# AXIS LABELS AND VALUES
+plt.xlabel('t')
+plt.ylabel('Mean Reward')
+x = np.arange(args.n_rounds)
+w = mean_reward
+# SET TITLE
+bandit_name = args.bandit_name + 'Bandit'
+if args.bandit_name in ['UCBL', 'UCBLM']:
+    bandit_name += '(\u03BC = ' + str(args.crp_upper_bound) + ')'
+elif args.bandit_name == 'EXP3':
+    bandit_name += '(\u03B3 = ' + str(args.gamma) + ')'
+# add elif for other bandits
+plt.title('Pricing\n' + str(args.n_runs) + ' Experiments - ' + bandit_name)
+# PLOT
+plt.plot(x, w, linewidth=2, linestyle="-", c="g")
+plt.show()
+
+
+

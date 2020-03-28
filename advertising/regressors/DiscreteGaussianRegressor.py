@@ -15,6 +15,7 @@ class DiscreteGaussianRegressor(DiscreteRegressor):
         self.pulled_arm_list.append(pulled_arm)
         self.rewards_per_arm[pulled_arm].append(reward)
 
+        # TODO optimize with online calculation
         self.means[pulled_arm] = np.mean(self.rewards_per_arm[pulled_arm])
         n_samples = len(self.rewards_per_arm[pulled_arm])
         if n_samples > 1:

@@ -12,14 +12,14 @@ class UCBLMBandit(DiscreteBandit):
     Found at https://home.deib.polimi.it/trovo/01papers/trovo2018improving_a.pdf
     """
 
-    def __init__(self, n_arms, crp_upper_bound, price_list):
+    def __init__(self, n_arms, crp_upper_bound, prices):
         super().__init__(n_arms)
 
         # Hyper-parameter: the upper bound of the conversion rates of all the arms
         self.crp_upper_bound = crp_upper_bound
 
         # Additional data structure
-        self.price_list = price_list
+        self.prices = prices
         self.round_per_arm = np.zeros(n_arms)
         self.expected_bernoulli = np.zeros(n_arms)
         self.upper_bound = np.ones(n_arms)
@@ -36,7 +36,7 @@ class UCBLMBandit(DiscreteBandit):
         if self.t < self.n_arms:
             return np.random.choice(np.argwhere(self.round_per_arm == 0).reshape(-1))
 
-        upper_bound_with_price = self.upper_bound * self.price_list
+        upper_bound_with_price = self.upper_bound * self.prices
         idxes = np.argwhere(upper_bound_with_price == upper_bound_with_price.max()).reshape(-1)
         pulled_arm = np.random.choice(idxes)
         return pulled_arm

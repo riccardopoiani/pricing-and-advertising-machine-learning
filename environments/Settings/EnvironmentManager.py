@@ -62,7 +62,7 @@ class EnvironmentManager(object):
         if function_dict["type"] == "linear":
             def linear_generator_function(coefficient, min_price, max_crp):
                 return lambda x: \
-                    np.random.binomial(n=1, p=coefficient * (-x + min_price) + max_crp)
+                    np.random.binomial(n=1, p=np.max([0, coefficient * (-x + min_price) + max_crp]))
 
             function_info = function_dict["info"]
             fun: IStochasticFunction = BoundedLambdaStochasticFunction(
@@ -75,10 +75,11 @@ class EnvironmentManager(object):
         return fun
 
     @classmethod
-    def load_scenario(cls, scenario_name) -> (List[Phase]):
+    def load_scenario(cls, scenario_name, verbose=False) -> (List[Phase]):
         """
         Load a scenario on the basis of its name
 
+        :param verbose: whether to print out information regarding the environment
         :param scenario_name: name of the scenario which is also the filename of the json file saved in the resources
                               folder
         :return: a list of phases contained in the scenario chosen
@@ -88,14 +89,16 @@ class EnvironmentManager(object):
         with open(scenario_json_file_path) as json_file:
             data: dict = json.load(json_file)
 
-            print("EnvironmentManager: the scenario imported is {}".format(data["scenario_name"]))
-            print("EnvironmentManager: the scenario's number of subcampaigns is {}".format(data["n_subcampaigns"]))
-            print("EnvironmentManager: the scenario's phases are")
+            if verbose:
+                print("EnvironmentManager: the scenario imported is {}".format(data["scenario_name"]))
+                print("EnvironmentManager: the scenario's number of subcampaigns is {}".format(data["n_subcampaigns"]))
+                print("EnvironmentManager: the scenario's phases are")
 
             data_phases: List = data["phases"]
             phases: List[Phase] = []
             for i, phase_dict in enumerate(data_phases):
-                print("EnvironmentManager:\t {} - {}".format(i + 1, phase_dict["phase_name"]))
+                if verbose:
+                    print("EnvironmentManager:\t {} - {}".format(i + 1, phase_dict["phase_name"]))
 
                 crp_functions: List[IStochasticFunction] = []
                 n_clicks_functions: List[IStochasticFunction] = []

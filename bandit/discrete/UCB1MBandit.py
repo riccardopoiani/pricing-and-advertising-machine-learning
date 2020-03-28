@@ -9,9 +9,9 @@ class UCB1MBandit(DiscreteBandit):
     Found at https://home.deib.polimi.it/trovo/01papers/trovo2018improving_a.pdf
     """
 
-    def __init__(self, n_arms, price_list):
+    def __init__(self, n_arms, prices):
         super().__init__(n_arms)
-        self.price_list = price_list
+        self.prices = prices
         self.round_per_arm = np.zeros(n_arms)
         self.expected_bernoulli = np.zeros(n_arms)
         self.upper_bound = np.ones(n_arms)
@@ -28,7 +28,7 @@ class UCB1MBandit(DiscreteBandit):
         if self.t < self.n_arms:
             return np.random.choice(np.argwhere(self.round_per_arm == 0).reshape(-1))
 
-        upper_bound_with_price = self.upper_bound * self.price_list
+        upper_bound_with_price = self.upper_bound * self.prices
         idxes = np.argwhere(upper_bound_with_price == upper_bound_with_price.max()).reshape(-1)
         pulled_arm = np.random.choice(idxes)
         return pulled_arm

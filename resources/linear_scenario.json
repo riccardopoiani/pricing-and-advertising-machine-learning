@@ -9,27 +9,27 @@
         {
           "type": "linear",
           "info": {
-            "coefficient": 0.01875,
-            "min_price": 2,
-            "max_price": 10,
+            "coefficient": 0.015,
+            "min_price": 15,
+            "max_price": 25,
             "max_crp": 0.15
           }
         },
         {
           "type": "linear",
           "info": {
-            "coefficient": 0.02,
-            "min_price": 2,
-            "max_price": 10,
+            "coefficient": 0.0163,
+            "min_price": 15,
+            "max_price": 25,
             "max_crp": 0.18
           }
         },
         {
           "type": "linear",
           "info": {
-            "coefficient": 0.01,
-            "min_price": 2,
-            "max_price": 10,
+            "coefficient": 0.007,
+            "min_price": 15,
+            "max_price": 25,
             "max_crp": 0.05
           }
         }
@@ -38,30 +38,30 @@
         {
           "type": "linear",
           "info": {
-            "coefficient": 30,
+            "coefficient": 3.5,
             "bias": 0,
             "lower_bound": 0,
-            "upper_bound": null,
+            "upper_bound": 40000,
             "noise_std": 5
           }
         },
         {
           "type": "linear",
           "info": {
-            "coefficient": 40,
+            "coefficient": 4,
             "bias": 0,
             "lower_bound": 0,
-            "upper_bound": 2000,
+            "upper_bound": 45000,
             "noise_std": 5
           }
         },
         {
           "type": "linear",
           "info": {
-            "coefficient": 50,
+            "coefficient": 2.5,
             "bias": 0,
             "lower_bound": 0,
-            "upper_bound": 1500,
+            "upper_bound": 30000,
             "noise_std": 5
           }
         }

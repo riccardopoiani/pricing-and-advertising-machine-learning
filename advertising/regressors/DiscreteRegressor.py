@@ -6,7 +6,7 @@ import numpy as np
 
 class DiscreteRegressor(ABC):
     """
-    Abstract class for discrete regressors in bandit scenarios
+    Abstract class for discrete regressor in bandit scenarios
     """
 
     def __init__(self, arms: List[float], init_std_dev: float):
