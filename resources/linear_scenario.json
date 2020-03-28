@@ -1,0 +1,71 @@
+{
+  "scenario_name": "Completely linear scenario",
+  "n_subcampaigns": 3,
+  "phases": [
+    {
+      "phase_name": "General phase",
+      "duration": 10000,
+      "crp_functions": [
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 0.01875,
+            "min_price": 2,
+            "max_price": 10,
+            "max_crp": 0.15
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 0.02,
+            "min_price": 2,
+            "max_price": 10,
+            "max_crp": 0.18
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 0.01,
+            "min_price": 2,
+            "max_price": 10,
+            "max_crp": 0.05
+          }
+        }
+      ],
+      "n_clicks_functions": [
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 30,
+            "bias": 0,
+            "lower_bound": 0,
+            "upper_bound": null,
+            "noise_std": 5
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 40,
+            "bias": 0,
+            "lower_bound": 0,
+            "upper_bound": 2000,
+            "noise_std": 5
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 50,
+            "bias": 0,
+            "lower_bound": 0,
+            "upper_bound": 1500,
+            "noise_std": 5
+          }
+        }
+      ]
+    }
+  ]
+}

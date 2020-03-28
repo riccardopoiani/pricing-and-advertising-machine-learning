@@ -16,42 +16,23 @@ from bandit.discrete.CombinatorialBandit import CombinatorialBandit
 from bandit.discrete.CombinatorialGPBandit import CombinatorialGPBandit
 from bandit.discrete.CombinatorialGaussianBandit import CombinatorialGaussianBandit
 from environments.AdvertisingEnvironment import AdvertisingEnvironment
-from environments.Settings.Scenario import LinearPriceLinearClickScenario
-from environments.Phase import Phase
-from environments.Settings import EnvironmentSettings
+from environments.Settings.EnvironmentManager import EnvironmentManager
 from utils.folder_management import handle_folder_creation
 
 # Basic default settings
 N_ROUNDS = 100
 BASIC_OUTPUT_FOLDER = "../report/project_point_2/"
-EXPERIMENT_DEFAULT_SETTING = "LINEAR_PRICE_LINEAR_CLICK"
 
 # Bandit parameters
 ALPHA = 100
 N_RESTARTS_OPTIMIZERS = 10
 
-# Pricing settings (useless for this scenario)
-PRICE_MULTIPLIER = [1, 2, 3]
-MIN_PRICE_LIST = [0, 0, 0]
-MAX_PRICE_LIST = [10, 10, 10]
-
 # Advertising settings
+SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "resources"
 CUM_BUDGET = 100
 N_SUBCAMPAIGNS = 3
 N_ARMS = 11
-
-MAX_N_CLICKS = [3000, 2000, 1500]
-BUDGET_SCALE = [(30 + i * 10) for i in range(N_SUBCAMPAIGNS)]
-BUDGET_STD = [10] * N_SUBCAMPAIGNS
-BEST_BUDGETS = [20.0, 50.0, 30.0]
-
-LINEAR_PRICE_GAUSSIAN_VISIT_KWARGS = {'price_multiplier': PRICE_MULTIPLIER,
-                                      'budget_multiplier': BUDGET_SCALE,
-                                      'budget_std': BUDGET_SCALE,
-                                      'min_price': MIN_PRICE_LIST,
-                                      'max_price': MAX_PRICE_LIST,
-                                      'max_n_clicks_list': MAX_N_CLICKS,
-                                      'n_subcampaigns': N_SUBCAMPAIGNS}
+BEST_BUDGET_ALLOCATION = [20, 50, 30]
 
 
 def get_arguments():
@@ -72,7 +53,7 @@ def get_arguments():
     parser.add_argument("-n_arms", "--n_arms", help="Number of arms for the prices", type=int, default=N_ARMS)
 
     # Scenario settings
-    parser.add_argument("-scenario_name", "--scenario_name", default=EXPERIMENT_DEFAULT_SETTING,
+    parser.add_argument("-scenario_name", "--scenario_name", default=SCENARIO_NAME,
                         type=str, help="Name of the setting of the experiment")
 
     # Experiment run details
@@ -91,11 +72,6 @@ def get_arguments():
                         type=str)
 
     return parser.parse_args()
-
-
-def get_scenario_kwargs(scenario_name: str):
-    if scenario_name == LinearPriceLinearClickScenario.get_scenario_name():
-        return LINEAR_PRICE_GAUSSIAN_VISIT_KWARGS
 
 
 def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e6, alpha: float = ALPHA,
@@ -121,12 +97,8 @@ def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e6, 
     return bandit
 
 
-def main(args):
-    crp, n_clicks = EnvironmentSettings.EnvironmentManager.get_setting(args.scenario_name,
-                                                                       **get_scenario_kwargs(
-                                                                           args.scenario_name))
-    phase = Phase(args.n_rounds, n_clicks, crp)
-    env = AdvertisingEnvironment(args.n_subcampaigns, [phase])
+def main(args, phases):
+    env = AdvertisingEnvironment(args.n_subcampaigns, phases)
 
     campaign = Campaign(args.n_subcampaigns, args.cum_budget, args.n_arms)
     bandit = get_bandit(bandit_name=args.bandit_name, campaign=campaign)
@@ -146,7 +118,7 @@ def main(args):
     return bandit.collected_rewards, budget_allocation
 
 
-def run(id, seed, args):
+def run(id, seed, args, phases):
     """
     Run a task to carry out the experiment
 
@@ -158,22 +130,23 @@ def run(id, seed, args):
     # Eventually fix here the seeds for additional sources of randomness (e.g. tensorflow)
     np.random.seed(seed)
     print("Starting run {}".format(id))
-    rewards, best_allocation = main(args=args)
+    rewards, best_allocation = main(args=args, phases=phases)
     print("Done run {}".format(id))
     return rewards, best_allocation
 
 
 # Scheduling runs: ENTRY POINT
 args = get_arguments()
+phases = EnvironmentManager.load_scenario(args.scenario_name)
 
 seeds = [np.random.randint(1000000) for _ in range(args.n_runs)]
 rewards = []
 best_allocations = []
 if args.n_jobs == 1:
-    results = [run(id=id, seed=seed, args=args) for id, seed in zip(range(args.n_runs), seeds)]
+    results = [run(id=id, seed=seed, args=args, phases=phases) for id, seed in zip(range(args.n_runs), seeds)]
 else:
     results = Parallel(n_jobs=args.n_jobs, backend='loky')(
-        delayed(run)(id=id, seed=seed, args=args) for id, seed in zip(range(args.n_runs), seeds))
+        delayed(run)(id=id, seed=seed, args=args, phases=phases) for id, seed in zip(range(args.n_runs), seeds))
 for r in results:
     rewards.append(r[0])
     best_allocations.append(r[1])
@@ -196,22 +169,18 @@ if args.save_result:
     fd.write("Bandit algorithm: {}\n".format(args.bandit_name))
     fd.write("Scenario name {}\n".format(args.scenario_name))
 
-    fd.write("Polynomial Advertising Scenario {}\n\n".format(LINEAR_PRICE_GAUSSIAN_VISIT_KWARGS))
-
     fd.write("Best Budget Allocation {}\n".format(str(best_allocation)))
 
     fd.close()
 
+    # Plot cumulative regret and instantaneous reward
     rewards = np.mean(rewards, axis=0)
-    crp, n_clicks = EnvironmentSettings.EnvironmentManager.get_setting(args.scenario_name,
-                                                                       **get_scenario_kwargs(
-                                                                           args.scenario_name))
-    env = AdvertisingEnvironment(args.n_subcampaigns, [Phase(args.n_rounds, n_clicks, crp)])
+    env = AdvertisingEnvironment(args.n_subcampaigns, phases)
     avg_regrets = []
     for reward in rewards:
         # The clairvoyance algorithm reward is the best reward he can get by sampling the environment
         # from the best budget allocation
-        opt = sum(env.round(BEST_BUDGETS))
+        opt = sum(env.round(BEST_BUDGET_ALLOCATION))
         avg_regrets.append(opt - reward)
     cum_regrets = np.cumsum(avg_regrets)
 

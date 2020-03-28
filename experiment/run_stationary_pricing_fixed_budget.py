@@ -9,7 +9,6 @@ from joblib import Parallel, delayed
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
-from environments.Phase import Phase
 from environments.PricingStationaryEnvironmentFixedBudget import PricingStationaryEnvironmentFixedBudget
 from bandit.discrete import DiscreteBandit
 from bandit.discrete.EXP3Bandit import EXP3Bandit
@@ -17,40 +16,20 @@ from bandit.discrete.GIROBernoulliBandit import GIROBernoulliBandit
 from bandit.discrete.LinPHE import LinPHE
 from bandit.discrete.TSBanditRescaledBernoulli import TSBanditRescaledBernoulli
 from bandit.discrete.UCB1Bandit import UCB1Bandit
-from environments.Settings import EnvironmentSettings
-from environments.Settings.Scenario import LinearPriceLinearClickScenario
+from environments.Settings.EnvironmentManager import EnvironmentManager
 from utils.folder_management import handle_folder_creation
 
 # Basic default settings
 N_ROUNDS = 1000
 BASIC_OUTPUT_FOLDER = "../report/project_point_4/"
-EXPERIMENT_DEFAULT_SETTING = "LINEAR_PRICE_LINEAR_CLICK"
 
 # Pricing settings
-MIN_PRICE = 0
-MAX_PRICE = 100
+SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "resources"
+MIN_PRICE = 3
+MAX_PRICE = 10
 N_ARMS = 10
 DEFAULT_DISCRETIZATION = "UNIFORM"
 FIXED_BUDGET = 50
-
-# General possibilities
-DISCRETIZATION_TYPE = ['UNIFORM']
-
-# Linear price gaussian number of visits
-PRICE_MULTIPLIER = [1, 2, 3]
-BUDGET_SCALE = [0.1, 0.2, 0.3]
-BUDGET_STD = [10, 5, 1]
-MAX_N_CLICKS_LIST = [None, None, None]
-N_SUBCAMPAIGNS = 3
-MIN_PRICE_LIST = [MIN_PRICE, MIN_PRICE, MIN_PRICE]
-MAX_PRICE_LIST = [MAX_PRICE, MAX_PRICE, MAX_PRICE]
-LINEAR_PRICE_GAUSSIAN_VISIT_KWARGS = {'price_multiplier': PRICE_MULTIPLIER,
-                                      'budget_multiplier': BUDGET_SCALE,
-                                      'budget_std': BUDGET_SCALE,
-                                      'min_price': MIN_PRICE_LIST,
-                                      'max_price': MAX_PRICE_LIST,
-                                      'max_n_clicks_list': MAX_N_CLICKS_LIST,
-                                      'n_subcampaigns': N_SUBCAMPAIGNS}
 
 
 def get_arguments():
@@ -69,7 +48,7 @@ def get_arguments():
                         type=float)
 
     # Scenario settings
-    parser.add_argument("-scenario_name", "--scenario_name", default=EXPERIMENT_DEFAULT_SETTING,
+    parser.add_argument("-scenario_name", "--scenario_name", default=SCENARIO_NAME,
                         type=str, help="Name of the setting of the experiment")
 
     # Experiment run details
@@ -100,11 +79,6 @@ def get_prices(args):
         return np.linspace(start=MIN_PRICE, stop=MAX_PRICE, num=args.n_arms)
     else:
         raise NotImplemented("Not implemented discretization method")
-
-
-def get_env_kwargs(env_name: str):
-    if env_name == LinearPriceLinearClickScenario.get_scenario_name():
-        return LINEAR_PRICE_GAUSSIAN_VISIT_KWARGS
 
 
 def get_bandit(args, prices) -> DiscreteBandit:
@@ -140,11 +114,10 @@ def get_bandit(args, prices) -> DiscreteBandit:
 
 
 def main(args):
-    cpr, n_clicks = EnvironmentSettings.EnvironmentManager.get_setting(args.scenario_name,
-                                                                       **get_env_kwargs(args.scenario_name))
-    phase = Phase(args.n_rounds, n_clicks, cpr)
-    env = PricingStationaryEnvironmentFixedBudget(N_SUBCAMPAIGNS, [phase],
-                                                  fixed_budget_allocation=[args.budget] * N_SUBCAMPAIGNS)
+    phases = EnvironmentManager.load_scenario(args.scenario_name)
+    n_subcampaigns = phases[0].get_n_subcampaigns()
+    env = PricingStationaryEnvironmentFixedBudget(n_subcampaigns, phases,
+                                                  fixed_budget_allocation=[args.budget] * n_subcampaigns)
 
     prices = get_prices(args=args)
     bandit = get_bandit(args=args, prices=prices)
@@ -154,7 +127,7 @@ def main(args):
         price_idx = bandit.pull_arm()
 
         # Observe reward
-        reward = env.round(price=price_idx) * prices[price_idx]
+        reward = env.round(price=prices[price_idx]) * prices[price_idx]
 
         # Update bandit
         bandit.update(pulled_arm=price_idx, reward=reward)
@@ -203,8 +176,6 @@ if args.save_result:
     fd.write("Horizon: {}\n".format(args.n_rounds))
     fd.write("Bandit algorithm: {}\n\n".format(args.bandit_name))
     fd.write("Scenario name {}\n".format(args.scenario_name))
-
-    fd.write("Linear prices gaussian visits {}\n\n".format(LINEAR_PRICE_GAUSSIAN_VISIT_KWARGS))
 
     fd.write("Discretization type {}\n\n".format(args.discretization))
 

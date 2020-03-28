@@ -22,3 +22,8 @@ def handle_folder_creation(result_path: str):
 
     fd = open(output_file_name, "w")
     return fd, output_folder_path
+
+
+def get_resource_folder_path():
+    import os
+    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "resources")
