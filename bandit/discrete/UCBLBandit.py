@@ -9,19 +9,20 @@ class UCBLBandit(DiscreteBandit):
     Found at https://home.deib.polimi.it/trovo/01papers/trovo2018improving_a.pdf
     """
 
-    def __init__(self, n_arms, crp_upper_bound, prices):
+    def __init__(self, n_arms: int, crp_upper_bound: float, arm_values: np.array):
         super().__init__(n_arms)
 
         # Hyper-parameter: the upper bound of the conversion rates of all the arms
-        self.crp_upper_bound = crp_upper_bound
+        self.crp_upper_bound: float = crp_upper_bound
 
         # Additional data structure
-        self.prices = prices
-        self.round_per_arm = np.zeros(n_arms)
-        self.expected_bernoulli = np.zeros(n_arms)
-        self.upper_bound = np.ones(n_arms)
+        self.arm_values: np.array = arm_values
+        self.round_per_arm: np.array = np.zeros(n_arms)
+        self.expected_bernoulli: np.array = np.zeros(n_arms)
+        self.upper_bound: np.array = np.ones(n_arms)
+        self.max_values: float = np.max(arm_values)
 
-    def pull_arm(self):
+    def pull_arm(self) -> int:
         """
         Decide which arm to pull:
         - every arm needs to be pulled at least once (randomly)
@@ -33,12 +34,12 @@ class UCBLBandit(DiscreteBandit):
         if self.t < self.n_arms:
             return np.random.choice(np.argwhere(self.round_per_arm == 0).reshape(-1))
 
-        upper_bound_with_price = self.upper_bound * self.prices
+        upper_bound_with_price = self.upper_bound * self.arm_values
         idxes = np.argwhere(upper_bound_with_price == upper_bound_with_price.max()).reshape(-1)
         pulled_arm = np.random.choice(idxes)
         return pulled_arm
 
-    def update(self, pulled_arm, reward):
+    def update(self, pulled_arm, reward) -> None:
         """
         Update bandit statistics:
         - the reward collected for a given arm from the beginning of the learning process
@@ -55,6 +56,8 @@ class UCBLBandit(DiscreteBandit):
         """
         self.t += 1
         self.update_observations(pulled_arm, reward)
+        reward = reward / self.max_values
+
         # update the number of times the arm has been pulled
         self.round_per_arm[pulled_arm] += 1
 

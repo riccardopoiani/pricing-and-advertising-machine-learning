@@ -5,6 +5,7 @@ from typing import List
 from bandit.discrete.DiscreteBandit import DiscreteBandit
 
 
+@DeprecationWarning
 class LinPHE(DiscreteBandit):
     """
     "Pertubated-history exploration in stochastic linear bandits" - Kveton et. al [2019]

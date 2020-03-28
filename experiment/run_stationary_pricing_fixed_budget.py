@@ -31,6 +31,7 @@ MAX_PRICE = 25
 N_ARMS = 10
 DEFAULT_DISCRETIZATION = "UNIFORM"
 FIXED_BUDGET = 5000 / 3
+UNIT_COST = 12
 
 
 def get_arguments():
@@ -43,6 +44,7 @@ def get_arguments():
     # Pricing settings
     parser.add_argument("-n_arms", "--n_arms", help="Number of arms for the prices", type=int, default=N_ARMS)
     parser.add_argument("-d", "--discretization", help="Discretization type", type=str, default=DEFAULT_DISCRETIZATION)
+    parser.add_argument("-c", "--unit_cost", help="Unit cost for each sold unit", type=float, default=UNIT_COST)
 
     # Ads setting
     parser.add_argument("-bud", "--budget", default=FIXED_BUDGET, help="Fixed budget to be used for the simulation",
@@ -82,27 +84,28 @@ def get_prices(args):
         raise NotImplemented("Not implemented discretization method")
 
 
-def get_bandit(args, prices) -> DiscreteBandit:
+def get_bandit(args, arm_values: np.array) -> DiscreteBandit:
     """
     Retrieve the bandit to be used in the experiment according to the bandit name
 
     :param args: command line arguments
+    :param arm_values: values of each arm
     :return: bandit that will be used to carry out the experiment
     """
     bandit_name = args.bandit_name
 
     if bandit_name == "TS":
-        bandit = TSBanditRescaledBernoulli(n_arms=N_ARMS, prices=prices)
+        bandit = TSBanditRescaledBernoulli(n_arms=N_ARMS, arm_values=arm_values)
     elif bandit_name == "UCB1":
-        bandit = UCB1Bandit(n_arms=N_ARMS)
+        bandit = UCB1Bandit(n_arms=N_ARMS, arm_values=arm_values)
     elif bandit_name == "UCB1M":
-        bandit = UCB1MBandit(n_arms=N_ARMS, prices=prices)
+        bandit = UCB1MBandit(n_arms=N_ARMS, arm_values=arm_values)
     elif bandit_name == "UCBL":
-        bandit = UCBLBandit(n_arms=N_ARMS, crp_upper_bound=args.crp_upper_bound, prices=prices)
+        bandit = UCBLBandit(n_arms=N_ARMS, crp_upper_bound=args.crp_upper_bound, arm_values=arm_values)
     elif bandit_name == "UCBLM":
-        bandit = UCBLMBandit(n_arms=N_ARMS, crp_upper_bound=args.crp_upper_bound, prices=prices)
+        bandit = UCBLMBandit(n_arms=N_ARMS, crp_upper_bound=args.crp_upper_bound, arm_values=arm_values)
     elif bandit_name == "EXP3":
-        bandit = EXP3Bandit(n_arms=N_ARMS, gamma=args.gamma)
+        bandit = EXP3Bandit(n_arms=N_ARMS, gamma=args.gamma, arm_values=arm_values)
     else:
         raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
 
@@ -116,14 +119,15 @@ def main(args):
                                         fixed_budget_allocation=[args.budget] * n_subcampaigns)
 
     prices = get_prices(args=args)
-    bandit = get_bandit(args=args, prices=prices)
+    arm_profit = prices - args.unit_cost
+    bandit = get_bandit(args=args, arm_values=arm_profit)
 
-    for t in range(0, args.n_rounds):
+    for _ in range(0, args.n_rounds):
         # Choose arm
         price_idx = bandit.pull_arm()
 
         # Observe reward
-        reward = env.round(price=prices[price_idx]) * prices[price_idx]
+        reward = env.round(price=prices[price_idx]) * arm_profit[price_idx]
 
         # Update bandit
         bandit.update(pulled_arm=price_idx, reward=reward)

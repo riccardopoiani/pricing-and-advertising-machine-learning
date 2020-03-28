@@ -5,6 +5,7 @@ from typing import List
 from bandit.discrete.DiscreteBandit import DiscreteBandit
 
 
+@DeprecationWarning
 class GIROBernoulliBandit(DiscreteBandit):
     """
     Garbage-in reward-out bandit from:

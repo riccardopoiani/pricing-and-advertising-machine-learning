@@ -7,13 +7,14 @@ class UCB1Bandit(DiscreteBandit):
     Class representing a UCB1 bandit
     """
 
-    def __init__(self, n_arms):
+    def __init__(self, n_arms: int, arm_values: np.array):
         super().__init__(n_arms)
-        self.round_per_arm = np.zeros(n_arms)
-        self.expected_rewards = np.zeros(n_arms)
-        self.upper_bound = np.ones(n_arms)
+        self.round_per_arm: np.array = np.zeros(n_arms)
+        self.expected_rewards: np.array = np.zeros(n_arms)
+        self.upper_bound: np.array = np.ones(n_arms)
+        self.max_value: float = np.max(arm_values)
 
-    def pull_arm(self):
+    def pull_arm(self) -> int:
         """
         Decide which arm to pull:
         - every arm needs to be pulled at least once (randomly)
@@ -28,7 +29,7 @@ class UCB1Bandit(DiscreteBandit):
         pulled_arm = np.random.choice(idxes)
         return pulled_arm
 
-    def update(self, pulled_arm, reward):
+    def update(self, pulled_arm, reward) -> None:
         """
         Update bandit statistics:
         - the reward collected for a given arm from the beginning of the learning process
@@ -45,8 +46,13 @@ class UCB1Bandit(DiscreteBandit):
         """
         self.t += 1
         self.update_observations(pulled_arm, reward)
+
+        # Update rewards to deal with random variables not in [0, 1]
+        reward = reward / self.max_value
+
         # update the number of times the arm has been pulled
         self.round_per_arm[pulled_arm] += 1
+
         # update the expected reward of the pulled arm
         self.expected_rewards[pulled_arm] = (self.expected_rewards[pulled_arm] * (self.round_per_arm[pulled_arm]-1) +
                                              reward) / self.round_per_arm[pulled_arm]

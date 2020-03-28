@@ -8,23 +8,23 @@ class TSBanditRescaledBernoulli(DiscreteBandit):
     Class representing a Thompson sampling discrete learner
     """
 
-    def __init__(self, n_arms: int, prices: np.array):
+    def __init__(self, n_arms: int, arm_values: np.array):
         super().__init__(n_arms=n_arms)
-        self.beta_distribution = np.ones((n_arms, 2))
-        self.prices = prices
-        self.arm_count = np.zeros(shape=n_arms)
+        self.beta_distribution: np.array = np.ones((n_arms, 2))
+        self.arm_values: np.array = arm_values
 
-    def pull_arm(self):
+    def pull_arm(self) -> int:
         """
         Retrieve the index of the arm to be pulled by the bandit according to the current
         statistics
 
         :return: index of the arm to be pulled
         """
-        idx = np.argmax(self.sample_beta_distribution() * self.prices)
+        idx = np.argmax(self.sample_beta_distribution() * self.arm_values)
+        # TODO fix warning
         return idx
 
-    def update(self, pulled_arm, reward):
+    def update(self, pulled_arm, reward) -> None:
         """
         Update the bandit statistics with an observation tuple (pulled_arm, observed reward)
 
@@ -48,7 +48,7 @@ class TSBanditRescaledBernoulli(DiscreteBandit):
                                         b=self.beta_distribution[:, 1])
         return prior_sampling
 
-    def update_beta_distribution(self, pulled_arm, reward):
+    def update_beta_distribution(self, pulled_arm, reward) -> None:
         """
         Update the beta distribution of the pulled arm after having observed a reward
         related to it
@@ -57,8 +57,6 @@ class TSBanditRescaledBernoulli(DiscreteBandit):
         :param reward: observed reward of pulled_arm
         :return: none
         """
-        self.arm_count[pulled_arm] += 1
-        print(self.arm_count)
         if reward != 0:
             reward = 1
         self.beta_distribution[pulled_arm, 0] += reward
