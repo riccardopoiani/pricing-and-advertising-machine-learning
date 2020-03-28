@@ -28,10 +28,19 @@ class Environment(ABC):
 
     @staticmethod
     def get_total_time_horizon(phases: List[Phase]) -> int:
+        """
+        :param phases: the list of phase on which to calculate the total duration
+        :return: the total time horizon of the phases
+        """
         return sum([phase.get_duration() for phase in phases])
 
     @staticmethod
     def get_phase_index(phases: List[Phase], time_step: int) -> int:
+        """
+        :param phases: a list of phase
+        :param time_step: the global time step correlated to the phases
+        :return: the index of the actual phase correlated to the time step given
+        """
         duration_list = [phase.get_duration() for phase in phases]
         cum_sum_duration_list = np.cumsum(duration_list)
         idx = np.searchsorted(cum_sum_duration_list, time_step)

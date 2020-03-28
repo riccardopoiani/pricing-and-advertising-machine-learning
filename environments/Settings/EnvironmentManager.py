@@ -11,6 +11,18 @@ class EnvironmentManager(object):
 
     @classmethod
     def create_n_clicks_function(cls, function_dict: dict) -> IStochasticFunction:
+        """
+        Create the number of clicks function given a dictionary of template:
+            {
+                "type": ...
+                "info": {
+                    ...
+                }
+            }
+
+        :param function_dict: dictionary containing info related to the function
+        :return: an IStochasticFunction representing the number of clicks chosen
+        """
         if function_dict["type"] == "linear":
             def linear_generator_function(coefficient, bias, lower_bound, upper_bound, noise_std):
                 if lower_bound is None:
@@ -35,6 +47,18 @@ class EnvironmentManager(object):
 
     @classmethod
     def create_crp_function(cls, function_dict: dict) -> IStochasticFunction:
+        """
+        Create the conversion rate probability function given a dictionary of template:
+            {
+                "type": ...
+                "info": {
+                    ...
+                }
+            }
+
+        :param function_dict: the dictionary about the conversion rate probability to create
+        :return: an IStochasticFunction representing the conversion rate probability
+        """
         if function_dict["type"] == "linear":
             def linear_generator_function(coefficient, min_price, max_crp):
                 return lambda x: \
@@ -55,7 +79,8 @@ class EnvironmentManager(object):
         """
         Load a scenario on the basis of its name
 
-        :param scenario_name: name of the scenario
+        :param scenario_name: name of the scenario which is also the filename of the json file saved in the resources
+                              folder
         :return: a list of phases contained in the scenario chosen
         """
         scenario_folder = get_resource_folder_path()
