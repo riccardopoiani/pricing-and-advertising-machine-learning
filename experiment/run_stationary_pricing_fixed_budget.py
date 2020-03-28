@@ -21,7 +21,7 @@ from environments.Settings.EnvironmentManager import EnvironmentManager
 from utils.folder_management import handle_folder_creation
 
 # Basic default settings
-N_ROUNDS = 1000000
+N_ROUNDS = 40000
 BASIC_OUTPUT_FOLDER = "../report/project_point_4/"
 
 # Pricing settings
@@ -30,7 +30,7 @@ MIN_PRICE = 15
 MAX_PRICE = 25
 N_ARMS = 10
 DEFAULT_DISCRETIZATION = "UNIFORM"
-FIXED_BUDGET = 5000 / 3
+FIXED_BUDGET = 1000 / 3
 UNIT_COST = 12
 
 
@@ -127,12 +127,13 @@ def main(args):
         price_idx = bandit.pull_arm()
 
         # Observe reward
+        env.simulate_user_arrive()
         reward = env.round(price=prices[price_idx]) * arm_profit[price_idx]
 
         # Update bandit
         bandit.update(pulled_arm=price_idx, reward=reward)
 
-    return bandit.collected_rewards
+    return bandit.collected_rewards, env.get_day_breakpoints()
 
 
 def run(id, seed, args):
@@ -147,9 +148,9 @@ def run(id, seed, args):
     # Eventually fix here the seeds for additional sources of randomness (e.g. tensorflow)
     np.random.seed(seed)
     print("Starting run {}".format(id))
-    rewards = main(args=args)
+    rewards, day_breakpoints = main(args=args)
     print("Done run {}".format(id))
-    return rewards
+    return rewards, day_breakpoints
 
 
 # Scheduling runs: ENTRY POINT
@@ -162,13 +163,20 @@ else:
     results = Parallel(n_jobs=args.n_jobs, backend='loky')(
         delayed(run)(id=id, seed=seed, args=args) for id, seed in zip(range(args.n_runs), seeds))
 
+rewards = [res[0] for res in results]
+day_breakpoint = [res[1] for res in results]
+
 if args.save_result:
     # Set up writing folder and file
     fd, folder_path_with_date = handle_folder_creation(result_path=args.output_folder)
 
     # Writing results and experiment details
+    print("Storing results on file...", end="")
     with open("{}reward_{}.pkl".format(folder_path_with_date, args.bandit_name), "wb") as output:
-        pickle.dump(results, output)
+        pickle.dump(rewards, output)
+    with open("{}day_{}.pkl".format(folder_path_with_date, args.bandit_name), "wb") as output:
+        pickle.dump(day_breakpoint, output)
+    print("Done")
 
     fd.write("Bandit experiment\n")
     fd.write("Number of arms: {}\n".format(args.n_arms))
@@ -185,34 +193,4 @@ if args.save_result:
     fd.write("Gamma parameter (EXP3) {}\n".format(args.gamma))
 
     fd.close()
-
-
-import matplotlib.pyplot as plt
-
-mean_reward = np.zeros(args.n_rounds)
-for exp in results:
-    for t in range(0, args.n_rounds):
-        mean_reward[t] += exp[t]
-mean_reward = mean_reward / args.n_runs
-# DRAW HORIZONTAL LINE INDICATING THE OPTIMAL REWARD
-optimal_reward = 0.2
-plt.axhline(y=optimal_reward)
-# AXIS LABELS AND VALUES
-plt.xlabel('t')
-plt.ylabel('Mean Reward')
-x = np.arange(args.n_rounds)
-w = mean_reward
-# SET TITLE
-bandit_name = args.bandit_name + 'Bandit'
-if args.bandit_name in ['UCBL', 'UCBLM']:
-    bandit_name += '(\u03BC = ' + str(args.crp_upper_bound) + ')'
-elif args.bandit_name == 'EXP3':
-    bandit_name += '(\u03B3 = ' + str(args.gamma) + ')'
-# add elif for other bandits
-plt.title('Pricing\n' + str(args.n_runs) + ' Experiments - ' + bandit_name)
-# PLOT
-plt.plot(x, w, linewidth=2, linestyle="-", c="g")
-plt.show()
-
-
 

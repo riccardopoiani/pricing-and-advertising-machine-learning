@@ -12,6 +12,7 @@ class TSBanditRescaledBernoulli(DiscreteBandit):
         super().__init__(n_arms=n_arms)
         self.beta_distribution: np.array = np.ones((n_arms, 2))
         self.arm_values: np.array = arm_values
+        self.arm_count = np.zeros(n_arms)
 
     def pull_arm(self) -> int:
         """
@@ -57,6 +58,8 @@ class TSBanditRescaledBernoulli(DiscreteBandit):
         :param reward: observed reward of pulled_arm
         :return: none
         """
+        #self.arm_count[pulled_arm]+=1
+        #print(self.arm_count)
         if reward != 0:
             reward = 1
         self.beta_distribution[pulled_arm, 0] += reward

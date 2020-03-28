@@ -128,8 +128,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# report folder
+# report and notebooks folder
 /report
+/notebooks
 
 # User-specific stuff
 .idea/**/workspace.xml
