@@ -31,8 +31,8 @@ class EnvironmentManager(object):
                     upper_bound = np.inf
 
                 return lambda x: \
-                    np.random.normal(np.maximum(np.minimum(coefficient * x + bias, upper_bound), lower_bound),
-                                     noise_std)
+                    max(int(np.random.normal(np.maximum(np.minimum(coefficient * x + bias, upper_bound), lower_bound),
+                                             noise_std)), 0)  # function returns positive int numbers
 
             function_info = function_dict["info"]
             fun: IStochasticFunction = BoundedLambdaStochasticFunction(

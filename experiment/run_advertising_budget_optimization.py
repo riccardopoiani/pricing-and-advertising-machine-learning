@@ -29,10 +29,10 @@ N_RESTARTS_OPTIMIZERS = 10
 
 # Advertising settings
 SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "resources"
-CUM_BUDGET = 100
+CUM_BUDGET = 10000
 N_SUBCAMPAIGNS = 3
 N_ARMS = 11
-BEST_BUDGET_ALLOCATION = [20, 50, 30]
+BEST_BUDGET_ALLOCATION = [3000, 2000, 5000]
 
 
 def get_arguments():
@@ -97,7 +97,8 @@ def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e6, 
     return bandit
 
 
-def main(args, phases):
+def main(args):
+    phases = EnvironmentManager.load_scenario(args.scenario_name)
     env = AdvertisingEnvironment(args.n_subcampaigns, phases)
 
     campaign = Campaign(args.n_subcampaigns, args.cum_budget, args.n_arms)
@@ -118,7 +119,7 @@ def main(args, phases):
     return bandit.collected_rewards, budget_allocation
 
 
-def run(id, seed, args, phases):
+def run(id, seed, args):
     """
     Run a task to carry out the experiment
 
@@ -130,23 +131,22 @@ def run(id, seed, args, phases):
     # Eventually fix here the seeds for additional sources of randomness (e.g. tensorflow)
     np.random.seed(seed)
     print("Starting run {}".format(id))
-    rewards, best_allocation = main(args=args, phases=phases)
+    rewards, best_allocation = main(args=args)
     print("Done run {}".format(id))
     return rewards, best_allocation
 
 
 # Scheduling runs: ENTRY POINT
 args = get_arguments()
-phases = EnvironmentManager.load_scenario(args.scenario_name)
 
 seeds = [np.random.randint(1000000) for _ in range(args.n_runs)]
 rewards = []
 best_allocations = []
 if args.n_jobs == 1:
-    results = [run(id=id, seed=seed, args=args, phases=phases) for id, seed in zip(range(args.n_runs), seeds)]
+    results = [run(id=id, seed=seed, args=args) for id, seed in zip(range(args.n_runs), seeds)]
 else:
     results = Parallel(n_jobs=args.n_jobs, backend='loky')(
-        delayed(run)(id=id, seed=seed, args=args, phases=phases) for id, seed in zip(range(args.n_runs), seeds))
+        delayed(run)(id=id, seed=seed, args=args) for id, seed in zip(range(args.n_runs), seeds))
 for r in results:
     rewards.append(r[0])
     best_allocations.append(r[1])
@@ -175,6 +175,7 @@ if args.save_result:
 
     # Plot cumulative regret and instantaneous reward
     rewards = np.mean(rewards, axis=0)
+    phases = EnvironmentManager.load_scenario(args.scenario_name)
     env = AdvertisingEnvironment(args.n_subcampaigns, phases)
     avg_regrets = []
     for reward in rewards:
