@@ -11,19 +11,17 @@ class DiscreteRegressor(ABC):
 
     def __init__(self, arms: List[float], init_std_dev: float):
         self.arms: List[float] = arms
-        self.pulled_arm_list: List[int] = []
-        self.rewards_per_arm: List[List] = [[] for _ in range(len(arms))]
 
         self.means: np.ndarray = np.zeros(len(self.arms))
         self.sigmas: np.ndarray = np.ones(len(self.arms)) * init_std_dev
 
     @abstractmethod
-    def update_model(self, pulled_arm: int, reward: float) -> None:
+    def fit_model(self, collected_rewards: np.array, pulled_arm_history: np.array) -> None:
         """
-        Update the Gaussian Process model in an online fashion
+        Update the model with the given data
 
-        :param pulled_arm: index of the pulled arm
-        :param reward: scalar reward observation value
+        :param pulled_arm_history: array containing the index of the pulled arms at each time-step
+        :param collected_rewards: collected rewards at each time-step
         :return: None
         """
         pass

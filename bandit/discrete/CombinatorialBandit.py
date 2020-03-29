@@ -1,5 +1,6 @@
 from abc import ABC
 from typing import List
+
 import numpy as np
 
 from advertising.data_structure.Campaign import Campaign
@@ -20,6 +21,9 @@ class CombinatorialBandit(IBandit, ABC):
         self.collected_rewards: List[float] = []
         self.pulled_superarm_list: List[List] = []
         self.model_list: List[DiscreteRegressor] = []
+
+        self.collected_rewards_sub_campaign: List[List] = [[] for _ in range(campaign.get_n_sub_campaigns())]
+        self.pulled_arm_sub_campaign: List[List] = [[] for _ in range(campaign.get_n_sub_campaigns())]
 
     def pull_arm(self) -> List[int]:
         """
@@ -44,6 +48,10 @@ class CombinatorialBandit(IBandit, ABC):
         self.collected_rewards.append(sum(reward))
         self.pulled_superarm_list.append(pulled_arm)
 
+        for i in range(self.campaign.get_n_sub_campaigns()):
+            self.pulled_arm_sub_campaign[i].append(pulled_arm[i])
+            self.collected_rewards_sub_campaign[i].append(reward[i])
+
     def update(self, pulled_arm: List[int], reward: List[float]) -> None:
         """
         Update observations and models of the sub-campaign
@@ -55,10 +63,9 @@ class CombinatorialBandit(IBandit, ABC):
         self.t += 1
         self.update_observations(pulled_arm, reward)
         for sub_index, model in enumerate(self.model_list):
-            model.update_model(pulled_arm[sub_index], reward[sub_index])
+            model.fit_model(collected_rewards=self.collected_rewards_sub_campaign[sub_index],
+                            pulled_arm_history=self.pulled_arm_sub_campaign[sub_index])
 
             # Update estimations of the values of the sub-campaigns
             sub_campaign_values = self.model_list[sub_index].sample_distribution()
             self.campaign.set_sub_campaign(sub_index, sub_campaign_values)
-
-

@@ -25,7 +25,8 @@ class TSBanditGP(DiscreteBandit):
     def update(self, pulled_arm: int, reward: float):
         self.t += 1
         self.update_observations(pulled_arm, reward)
-        self.regressor.update_model(pulled_arm, reward)
+        self.regressor.fit_model(collected_rewards=self.collected_rewards,
+                                 pulled_arm_history=self.pulled_arm_list)
 
     def pull_arm(self):
         prob_per_arm = self.regressor.sample_distribution()

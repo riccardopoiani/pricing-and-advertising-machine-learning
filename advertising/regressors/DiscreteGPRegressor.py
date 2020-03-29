@@ -2,7 +2,7 @@ from typing import List
 
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, Product, ConstantKernel as C, WhiteKernel
+from sklearn.gaussian_process.kernels import RBF, Product, ConstantKernel as C
 
 from advertising.regressors.DiscreteRegressor import DiscreteRegressor
 
@@ -17,7 +17,6 @@ class DiscreteGPRegressor(DiscreteRegressor):
         if normalized:
             arms = arms / np.max(arms)
         super().__init__(arms, init_std_dev)
-        self.collected_rewards: List[float] = []
 
         self.kernel: Product = C(1.0, (1e-8, 1e8)) * RBF(1.0, (1e-8, 1e8))
         self.alpha = alpha
@@ -27,14 +26,10 @@ class DiscreteGPRegressor(DiscreteRegressor):
                                                                      normalize_y=True,
                                                                      n_restarts_optimizer=self.n_restarts_optimizer)
 
-    def update_model(self, pulled_arm: int, reward: float):
-        self.pulled_arm_list.append(pulled_arm)
-        self.collected_rewards.append(reward)
-        self.rewards_per_arm[pulled_arm].append(reward)
+    def fit_model(self, collected_rewards: np.array, pulled_arm_history: np.array):
+        x = np.atleast_2d(np.array(self.arms)[pulled_arm_history]).T
 
-        x = np.atleast_2d(np.array(self.arms)[self.pulled_arm_list]).T
-
-        self.gp.fit(x, self.collected_rewards)
+        self.gp.fit(x, collected_rewards)
         self.means, self.sigmas = self.gp.predict(np.atleast_2d(self.arms).T, return_std=True)
         self.sigmas = np.maximum(self.sigmas, 1e-2)  # avoid negative numbers
 
