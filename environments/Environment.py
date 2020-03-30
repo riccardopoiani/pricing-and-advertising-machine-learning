@@ -26,26 +26,20 @@ class Environment(ABC):
         self.n_subcampaigns = n_subcampaigns
         self.phases: List[Phase] = phases
 
-    @staticmethod
-    def get_total_time_horizon(phases: List[Phase]) -> int:
+    def get_total_time_horizon(self) -> int:
         """
-        :param phases: the list of phase on which to calculate the total duration
         :return: the total time horizon of the phases
         """
-        return sum([phase.get_duration() for phase in phases])
+        return sum([phase.get_duration() for phase in self.phases])
 
-    @staticmethod
-    def get_phase_index(phases: List[Phase], time_step: int) -> int:
+    def get_current_phase(self) -> Phase:
         """
-        :param phases: a list of phase
-        :param time_step: the global time step correlated to the phases
         :return: the index of the actual phase correlated to the time step given
         """
-        duration_list = [phase.get_duration() for phase in phases]
+        duration_list = [phase.get_duration() for phase in self.phases]
         cum_sum_duration_list = np.cumsum(duration_list)
-        idx = np.searchsorted(cum_sum_duration_list, time_step)
-
-        return idx
+        idx = np.searchsorted(cum_sum_duration_list, self.day_t)
+        return self.phases[idx]
 
     def get_n_subcampaigns(self):
         return self.n_subcampaigns

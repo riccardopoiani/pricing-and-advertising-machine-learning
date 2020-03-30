@@ -24,7 +24,7 @@ class PricingEnvironmentFixedBudget(Environment):
         self.sampled_users: List = []
         self.fixed_budget_allocation = fixed_budget_allocation
         self.current_user_class = 0
-        self.current_phase = 0
+        self.current_phase = self.get_current_phase()
         self.day_breakpoints: List[int] = []
         self.user_count = 0
 
@@ -37,7 +37,7 @@ class PricingEnvironmentFixedBudget(Environment):
         """
         self.user_count += 1
         self.simulate_user_arrive()
-        return self.phases[self.current_phase].get_crp(class_idx=self.current_user_class, price=price)
+        return self.current_phase.get_crp(class_idx=self.current_user_class, price=price)
 
     def simulate_user_arrive(self) -> None:
         """
@@ -47,12 +47,11 @@ class PricingEnvironmentFixedBudget(Environment):
         for the next day.
         """
         # Check if the day is over: in this case, samples users from the number of visits distribution
-        self.current_phase = self.get_phase_index(self.phases, self.day_t)
+        self.current_phase = self.get_current_phase()
 
         elapsed_day = False
         while len(self.sampled_users) == 0:
-            n_users_list = self.phases[self.current_phase].\
-                get_all_n_clicks(budget_allocation=self.fixed_budget_allocation)
+            n_users_list = self.current_phase.get_all_n_clicks(budget_allocation=self.fixed_budget_allocation)
             for i in range(len(n_users_list)):
                 self.sampled_users.extend([i] * int(n_users_list[i]))
             np.random.shuffle(self.sampled_users)
