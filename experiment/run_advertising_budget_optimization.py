@@ -17,6 +17,7 @@ from advertising.regressors.DiscreteGPRegressor import DiscreteGPRegressor
 from advertising.regressors.DiscreteGaussianRegressor import DiscreteGaussianRegressor
 from advertising.data_structure.Campaign import Campaign
 from bandit.combinatiorial.CombinatorialStationaryBandit import CombinatorialStationaryBandit
+from bandit.combinatiorial.SWCombinatorialBandit import SWCombinatorialBandit
 from environments.AdvertisingEnvironment import AdvertisingEnvironment
 from environments.Settings.EnvironmentManager import EnvironmentManager
 from utils.folder_management import handle_folder_creation
@@ -65,10 +66,11 @@ def get_arguments():
 
     # Bandit hyper-parameters
     parser.add_argument("-b", "--bandit_name", help="Name of the bandit to be used in the experiment")
+    parser.add_argument("-sw", "--sw_size", help="Size of the sliding window for SW bandits", type=int)
 
     # Store results
     parser.add_argument("-s", "--save_result", help="Whether to store results or not", type=lambda x: int(x) != 0,
-                        default=0)
+                        default=1)
     parser.add_argument("-o", "--output_folder", default=BASIC_OUTPUT_FOLDER, help="Basic folder where"
                                                                                    "to store the output",
                         type=str)
@@ -99,6 +101,12 @@ def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e6, 
                                                                          init_std_dev)
                                                for _ in range(campaign.get_n_sub_campaigns())]
         bandit = CombinatorialStationaryBandit(campaign=campaign, model_list=model_list)
+    elif bandit_name == "GPSWBandit":
+        model_list: List[DiscreteRegressor] = [
+            DiscreteGPRegressor(list(campaign.get_budgets()), init_std_dev, alpha, n_restarts_optimizer,
+                                normalized=True)
+            for _ in range(campaign.get_n_sub_campaigns())]
+        bandit = SWCombinatorialBandit(campaign=campaign, model_list=model_list, sw_size=args.sw_size)
     else:
         raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
 

@@ -4,7 +4,7 @@ from typing import List
 
 from advertising.data_structure import Campaign
 from advertising.optimizers.CampaignOptimizer import CampaignOptimizer
-from advertising.regressors import DiscreteRegressor
+from advertising.regressors.DiscreteRegressor import DiscreteRegressor
 from bandit.combinatiorial.CombinatorialBandit import CombinatorialBandit
 
 

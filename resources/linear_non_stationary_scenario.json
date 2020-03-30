@@ -1,0 +1,201 @@
+{
+  "scenario_name": "Completely linear scenario",
+  "n_subcampaigns": 3,
+  "phases": [
+    {
+      "phase_name": "Pre-covid-19",
+      "duration": 80,
+      "crp_functions": [
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 0.015,
+            "min_price": 15,
+            "max_price": 25,
+            "max_crp": 0.15
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 0.0163,
+            "min_price": 15,
+            "max_price": 25,
+            "max_crp": 0.18
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 0.007,
+            "min_price": 15,
+            "max_price": 25,
+            "max_crp": 0.05
+          }
+        }
+      ],
+      "n_clicks_functions": [
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 3.5,
+            "bias": 0,
+            "lower_bound": 0,
+            "upper_bound": 10000,
+            "noise_std": 25
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 4,
+            "bias": 0,
+            "lower_bound": 0,
+            "upper_bound": 7000,
+            "noise_std": 25
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 2.5,
+            "bias": 0,
+            "lower_bound": 0,
+            "upper_bound": 15000,
+            "noise_std": 25
+          }
+        }
+      ]
+    },
+    {
+      "phase_name": "Covid-19",
+      "duration": 100,
+      "crp_functions": [
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 0.02,
+            "min_price": 15,
+            "max_price": 25,
+            "max_crp": 0.18
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 0.018,
+            "min_price": 15,
+            "max_price": 25,
+            "max_crp": 0.2
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 0.01,
+            "min_price": 15,
+            "max_price": 25,
+            "max_crp": 0.06
+          }
+        }
+      ],
+      "n_clicks_functions": [
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 4,
+            "bias": 0,
+            "lower_bound": 0,
+            "upper_bound": 10000,
+            "noise_std": 25
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 0.1,
+            "bias": 0,
+            "lower_bound": 0,
+            "upper_bound": 7000,
+            "noise_std": 25
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 10,
+            "bias": 0,
+            "lower_bound": 0,
+            "upper_bound": 50000,
+            "noise_std": 25
+          }
+        }
+      ]
+    },
+    {
+      "phase_name": "Post-covid-19",
+      "duration": 10000,
+      "crp_functions": [
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 0.015,
+            "min_price": 15,
+            "max_price": 25,
+            "max_crp": 0.15
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 0.0163,
+            "min_price": 15,
+            "max_price": 25,
+            "max_crp": 0.18
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 0.007,
+            "min_price": 15,
+            "max_price": 25,
+            "max_crp": 0.05
+          }
+        }
+      ],
+      "n_clicks_functions": [
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 3.5,
+            "bias": 0,
+            "lower_bound": 0,
+            "upper_bound": 10000,
+            "noise_std": 25
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 4,
+            "bias": 0,
+            "lower_bound": 0,
+            "upper_bound": 7000,
+            "noise_std": 25
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 2.5,
+            "bias": 0,
+            "lower_bound": 0,
+            "upper_bound": 15000,
+            "noise_std": 25
+          }
+        }
+      ]
+    }
+  ]
+}

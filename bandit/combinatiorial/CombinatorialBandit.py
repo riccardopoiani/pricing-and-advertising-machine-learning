@@ -2,7 +2,7 @@ from abc import ABC
 from typing import List
 
 from advertising.data_structure import Campaign
-from advertising.regressors import DiscreteRegressor
+from advertising.regressors.DiscreteRegressor import DiscreteRegressor
 from bandit.IBandit import IBandit
 
 
@@ -28,3 +28,8 @@ class CombinatorialBandit(IBandit, ABC):
 
         self.collected_rewards_sub_campaign: List[List] = [[] for _ in range(campaign.get_n_sub_campaigns())]
         self.pulled_arm_sub_campaign: List[List] = [[] for _ in range(campaign.get_n_sub_campaigns())]
+
+        for sub_index, model in enumerate(self.model_list):
+            sub_campaign_values = self.model_list[sub_index].sample_distribution()
+            self.campaign.set_sub_campaign(sub_index, sub_campaign_values)
+
