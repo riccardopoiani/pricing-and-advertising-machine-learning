@@ -21,6 +21,6 @@ class AdvertisingEnvironment(Environment):
         """
         self.day_t += 1
 
-        phase_idx = self.get_phase_index(self.phases, self.day_t)
-        rewards = self.phases[phase_idx].get_all_n_clicks(budget_allocation=budget_allocation)
+        current_phase = self.get_current_phase()
+        rewards = current_phase.get_all_n_clicks(budget_allocation=budget_allocation)
         return rewards
