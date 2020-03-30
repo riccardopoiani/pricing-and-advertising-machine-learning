@@ -1,4 +1,3 @@
-from abc import ABC
 from typing import List
 
 import numpy as np
@@ -6,24 +5,16 @@ import numpy as np
 from advertising.data_structure.Campaign import Campaign
 from advertising.optimizers.CampaignOptimizer import CampaignOptimizer
 from advertising.regressors.DiscreteRegressor import DiscreteRegressor
-from bandit.IBandit import IBandit
+from bandit.combinatiorial.CombinatorialBandit import CombinatorialBandit
 
 
-class CombinatorialBandit(IBandit, ABC):
+class CombinatorialStationaryBandit(CombinatorialBandit):
     """
-    General class representing a combinatorial bandit for a specific campaign with a cumulative daily budget and
-    each budget of every sub-campaign can assume values from [0, cumulative daily budget] with a uniform discretization
+    Class representing a stationary combinatorial bandit
     """
 
-    def __init__(self, campaign: Campaign):
-        self.campaign: Campaign = campaign
-        self.t: int = 0
-        self.collected_rewards: List[float] = []
-        self.pulled_superarm_list: List[List] = []
-        self.model_list: List[DiscreteRegressor] = []
-
-        self.collected_rewards_sub_campaign: List[List] = [[] for _ in range(campaign.get_n_sub_campaigns())]
-        self.pulled_arm_sub_campaign: List[List] = [[] for _ in range(campaign.get_n_sub_campaigns())]
+    def __init__(self, campaign: Campaign, model_list: List[DiscreteRegressor]):
+        super().__init__(campaign=campaign, model_list=model_list)
 
     def pull_arm(self) -> List[int]:
         """

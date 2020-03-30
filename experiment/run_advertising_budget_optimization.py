@@ -3,18 +3,20 @@ import os
 import pickle
 import sys
 from collections import Counter
+from typing import List
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from joblib import Parallel, delayed
 
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
+from advertising.regressors import DiscreteRegressor
+from advertising.regressors.DiscreteGPRegressor import DiscreteGPRegressor
+from advertising.regressors.DiscreteGaussianRegressor import DiscreteGaussianRegressor
 from advertising.data_structure.Campaign import Campaign
-from bandit.discrete.CombinatorialBandit import CombinatorialBandit
-from bandit.discrete.CombinatorialGPBandit import CombinatorialGPBandit
-from bandit.discrete.CombinatorialGaussianBandit import CombinatorialGaussianBandit
+from bandit.combinatiorial.CombinatorialStationaryBandit import CombinatorialStationaryBandit
 from environments.AdvertisingEnvironment import AdvertisingEnvironment
 from environments.Settings.EnvironmentManager import EnvironmentManager
 from utils.folder_management import handle_folder_creation
@@ -75,7 +77,7 @@ def get_arguments():
 
 
 def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e6, alpha: float = ALPHA,
-               n_restarts_optimizer: int = N_RESTARTS_OPTIMIZERS) -> CombinatorialBandit:
+               n_restarts_optimizer: int = N_RESTARTS_OPTIMIZERS) -> CombinatorialStationaryBandit:
     """
     Retrieve the bandit to be used in the experiment according to the bandit name
 
@@ -87,10 +89,16 @@ def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e6, 
     :return: bandit that will be used to carry out the experiment
     """
     if bandit_name == "GPBandit":
-        bandit = CombinatorialGPBandit(campaign=campaign, init_std_dev=init_std_dev, alpha=alpha,
-                                       n_restarts_optimizer=n_restarts_optimizer)
+        model_list: List[DiscreteRegressor] = [
+            DiscreteGPRegressor(list(campaign.get_budgets()), init_std_dev, alpha, n_restarts_optimizer,
+                                normalized=True)
+            for _ in range(campaign.get_n_sub_campaigns())]
+        bandit = CombinatorialStationaryBandit(campaign=campaign, model_list=model_list)
     elif bandit_name == "GaussianBandit":
-        bandit = CombinatorialGaussianBandit(campaign=campaign, init_std_dev=init_std_dev)
+        model_list: List[DiscreteRegressor] = [DiscreteGaussianRegressor(list(campaign.get_budgets()),
+                                                                         init_std_dev)
+                                               for _ in range(campaign.get_n_sub_campaigns())]
+        bandit = CombinatorialStationaryBandit(campaign=campaign, model_list=model_list)
     else:
         raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
 
