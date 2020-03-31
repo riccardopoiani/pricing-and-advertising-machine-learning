@@ -1,5 +1,3 @@
-from typing import List
-
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, Product, ConstantKernel as C
@@ -27,11 +25,14 @@ class DiscreteGPRegressor(DiscreteRegressor):
                                                                      n_restarts_optimizer=self.n_restarts_optimizer)
 
     def fit_model(self, collected_rewards: np.array, pulled_arm_history: np.array):
-        x = np.atleast_2d(np.array(self.arms)[pulled_arm_history]).T
+        if len(collected_rewards) == 0 or len(pulled_arm_history):
+            self.reset_parameters()
+        else:
+            x = np.atleast_2d(np.array(self.arms)[pulled_arm_history]).T
 
-        self.gp.fit(x, collected_rewards)
-        self.means, self.sigmas = self.gp.predict(np.atleast_2d(self.arms).T, return_std=True)
-        self.sigmas = np.maximum(self.sigmas, 1e-2)  # avoid negative numbers
+            self.gp.fit(x, collected_rewards)
+            self.means, self.sigmas = self.gp.predict(np.atleast_2d(self.arms).T, return_std=True)
+            self.sigmas = np.maximum(self.sigmas, 1e-2)  # avoid negative numbers
 
     def sample_distribution(self):
         return np.random.normal(self.means, self.sigmas)

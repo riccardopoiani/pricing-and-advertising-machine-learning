@@ -12,13 +12,24 @@ class DiscreteRegressor(ABC):
     def __init__(self, arms: List[float], init_std_dev: float):
         self.arms: List[float] = arms
 
+        self.init_std_dev = init_std_dev
+        self.sigmas: np.ndarray = np.ones(len(self.arms)) * self.init_std_dev
         self.means: np.ndarray = np.zeros(len(self.arms))
-        self.sigmas: np.ndarray = np.ones(len(self.arms)) * init_std_dev
+
+    def reset_parameters(self) -> None:
+        """
+        Reset means and standard deviation to their initial values
+
+        :return: None
+        """
+        self.sigmas: np.ndarray = np.ones(len(self.arms)) * self.init_std_dev
+        self.means: np.ndarray = np.zeros(len(self.arms))
 
     @abstractmethod
     def fit_model(self, collected_rewards: np.array, pulled_arm_history: np.array) -> None:
         """
-        Update the model with the given data
+        Update the model with the given data.
+        If the array of given data is empty, the parameters are set to their initial values
 
         :param pulled_arm_history: array containing the index of the pulled arms at each time-step
         :param collected_rewards: collected rewards at each time-step
