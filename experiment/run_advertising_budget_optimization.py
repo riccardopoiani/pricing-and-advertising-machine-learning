@@ -34,7 +34,6 @@ N_RESTARTS_OPTIMIZERS = 10
 # Advertising settings
 SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "resources"
 CUM_BUDGET = 10000
-N_SUBCAMPAIGNS = 3
 N_ARMS = 11
 BEST_BUDGET_ALLOCATION = [3000, 2000, 5000]
 
@@ -50,9 +49,6 @@ def get_arguments():
     # Ads setting
     parser.add_argument("-bud", "--cum_budget", default=CUM_BUDGET,
                         help="Cumulative budget to be used for the simulation",
-                        type=float)
-    parser.add_argument("-n_sub", "--n_subcampaigns", default=N_SUBCAMPAIGNS,
-                        help="Number of subcampaigns to be used for the simulation",
                         type=float)
     parser.add_argument("-n_arms", "--n_arms", help="Number of arms for the prices", type=int, default=N_ARMS)
 
