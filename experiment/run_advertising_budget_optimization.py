@@ -18,6 +18,7 @@ from advertising.regressors.DiscreteGaussianRegressor import DiscreteGaussianReg
 from advertising.data_structure.Campaign import Campaign
 from bandit.combinatiorial.CombinatorialStationaryBandit import CombinatorialStationaryBandit
 from bandit.combinatiorial.SWCombinatorialBandit import SWCombinatorialBandit
+from bandit.combinatiorial.CDCombinatorialBandit import CDCombinatorialBandit
 from environments.AdvertisingEnvironment import AdvertisingEnvironment
 from environments.Settings.EnvironmentManager import EnvironmentManager
 from utils.folder_management import handle_folder_creation
@@ -67,6 +68,11 @@ def get_arguments():
     # Bandit hyper-parameters
     parser.add_argument("-b", "--bandit_name", help="Name of the bandit to be used in the experiment")
     parser.add_argument("-sw", "--sw_size", help="Size of the sliding window for SW bandits", type=int)
+    parser.add_argument("-gamma", "--gamma",
+                        help="Controls the fraction of the uniform sampling over the number of arms",
+                        type=int, default=0.1)
+    parser.add_argument("-cd_threshold", "--cd_threshold", help="Threshold used for change detection",
+                        type=int, default=0.1)
 
     # Store results
     parser.add_argument("-s", "--save_result", help="Whether to store results or not", type=lambda x: int(x) != 0,
@@ -107,6 +113,13 @@ def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e6, 
                                 normalized=True)
             for _ in range(campaign.get_n_sub_campaigns())]
         bandit = SWCombinatorialBandit(campaign=campaign, model_list=model_list, sw_size=args.sw_size)
+    elif bandit_name == "CDBandit":
+        model_list: List[DiscreteRegressor] = [
+            DiscreteGPRegressor(list(campaign.get_budgets()), init_std_dev, alpha, n_restarts_optimizer,
+                                normalized=True)
+            for _ in range(campaign.get_n_sub_campaigns())]
+        bandit = CDCombinatorialBandit(campaign=campaign, model_list=model_list, n_arms=N_ARMS,
+                                       gamma=args.gamma, cd_threshold=args.cd_threshold, sw_size=args.sw_size)
     else:
         raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
 
