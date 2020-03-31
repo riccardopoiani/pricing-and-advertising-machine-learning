@@ -7,7 +7,9 @@ from advertising.optimizers.CampaignOptimizer import CampaignOptimizer
 from advertising.regressors.DiscreteRegressor import DiscreteRegressor
 from bandit.combinatiorial.CombinatorialBandit import CombinatorialBandit
 
-
+# TODO
+#   - find good hyperparameters
+#   - find out if, at each change detection, it is better to reset a single sub-campaign or to reset them all
 class CDCombinatorialBandit(CombinatorialBandit):
     """
     Change Detection combinatorial bandit
@@ -79,11 +81,9 @@ class CDCombinatorialBandit(CombinatorialBandit):
 
         for i, model in enumerate(self.model_list):
             if np.random.binomial(n=1, p=1 - self.gamma):
-                model.fit_model(collected_rewards=self.collected_rewards_sub_campaign[i][self.last_detection_time[i]:self.t],
+                model.fit_model(collected_rewards=self.collected_rewards_sub_campaign[i][self.last_detection_time[i]:
+                                                                                         self.t],
                                 pulled_arm_history=self.pulled_arm_sub_campaign[i][self.last_detection_time[i]:self.t])
-                if (self.t - 1) == self.last_detection_time[i]:
-
-                    print(len(self.pulled_arm_sub_campaign[i][self.last_detection_time[i]:self.t]))
             else:
                 model.fit_model(collected_rewards=[],
                                 pulled_arm_history=[])
