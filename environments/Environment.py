@@ -3,7 +3,8 @@ from typing import List
 
 import numpy as np
 
-from environments.Phase import Phase
+from environments.Settings.Phase import Phase
+from environments.Settings.Scenario import Scenario
 
 
 class Environment(ABC):
@@ -17,32 +18,27 @@ class Environment(ABC):
      - the time horizon of the pricing and advertisement has to be the same
     """
 
-    def __init__(self, n_subcampaigns: int, phases: List[Phase]):
-        # Assertions
-        for phase in phases:
-            assert n_subcampaigns == phase.get_n_subcampaigns()
-
+    def __init__(self, scenario: Scenario):
         self.day_t = 0
-        self.n_subcampaigns = n_subcampaigns
-        self.phases: List[Phase] = phases
+        self.scenario = scenario
 
     def get_total_time_horizon(self) -> int:
         """
         :return: the total time horizon of the phases
         """
-        return sum([phase.get_duration() for phase in self.phases])
+        return sum([phase.get_duration() for phase in self.scenario.get_phases()])
 
     def get_current_phase(self) -> Phase:
         """
         :return: the index of the actual phase correlated to the time step given
         """
-        duration_list = [phase.get_duration() for phase in self.phases]
+        duration_list = [phase.get_duration() for phase in self.scenario.get_phases()]
         cum_sum_duration_list = np.cumsum(duration_list)
         idx = np.searchsorted(cum_sum_duration_list, self.day_t)
-        return self.phases[idx]
+        return self.scenario.get_phases()[idx]
 
     def get_n_subcampaigns(self):
-        return self.n_subcampaigns
+        return self.scenario.get_n_subcampaigns()
 
     @abstractmethod
     def round(self, *args, **kwargs):

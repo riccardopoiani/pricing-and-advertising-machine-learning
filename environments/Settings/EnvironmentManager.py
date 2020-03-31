@@ -1,8 +1,10 @@
-from typing import List
+from collections import defaultdict
+from typing import List, Dict, Tuple
 import os, json
 import numpy as np
 
-from environments.Phase import Phase
+from environments.Settings.Phase import Phase
+from environments.Settings.Scenario import Scenario
 from utils.folder_management import get_resource_folder_path
 from utils.stats.StochasticFunction import IStochasticFunction, BoundedLambdaStochasticFunction
 
@@ -75,7 +77,7 @@ class EnvironmentManager(object):
         return fun
 
     @classmethod
-    def load_scenario(cls, scenario_name, verbose=False) -> (List[Phase]):
+    def load_scenario(cls, scenario_name, verbose=False) -> Scenario:
         """
         Load a scenario on the basis of its name
 
@@ -95,6 +97,8 @@ class EnvironmentManager(object):
                 print("EnvironmentManager: the scenario's phases are")
 
             data_phases: List = data["phases"]
+            n_subcampaigns: int = data["n_subcampaigns"]
+            n_user_features: int = data["n_user_features"]
             phases: List[Phase] = []
             for i, phase_dict in enumerate(data_phases):
                 if verbose:
@@ -110,6 +114,13 @@ class EnvironmentManager(object):
                     n_clicks_functions.append(cls.create_n_clicks_function(n_clicks_function))
 
                 # Verify that the crp functions and n_clicks functions has both "n_subcampaigns" functions
-                assert len(crp_functions) == data["n_subcampaigns"]
+                assert len(crp_functions) == n_subcampaigns
                 phases.append(Phase(phase_dict["duration"], n_clicks_functions, crp_functions))
-            return phases
+
+            user_distributions: Dict[Tuple[int], float] = {}
+            for key, value in data["user_distributions"].items():
+                user_tuple_key = tuple([int(value) for value in key.replace("(", "").replace(")", "").split(",")])
+                user_distributions[user_tuple_key] = value
+
+            scenario = Scenario(n_subcampaigns, n_user_features, user_distributions, phases)
+            return scenario

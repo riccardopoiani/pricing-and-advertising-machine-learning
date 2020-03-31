@@ -1,7 +1,7 @@
 from typing import List
 
 from environments.Environment import Environment
-from environments.Phase import Phase
+from environments.Settings.Phase import Phase
 
 
 class AdvertisingEnvironment(Environment):
@@ -9,8 +9,8 @@ class AdvertisingEnvironment(Environment):
     Environment for an advertising scenario with no abrupt phases
     """
 
-    def __init__(self, n_subcampaigns: int, phases: List[Phase]):
-        super(AdvertisingEnvironment, self).__init__(n_subcampaigns, phases)
+    def __init__(self, scenario):
+        super(AdvertisingEnvironment, self).__init__(scenario)
 
     def round(self, budget_allocation: List[float]) -> List[float]:
         """

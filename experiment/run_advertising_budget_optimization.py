@@ -114,8 +114,8 @@ def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e6, 
 
 
 def main(args):
-    phases = EnvironmentManager.load_scenario(args.scenario_name)
-    env = AdvertisingEnvironment(args.n_subcampaigns, phases)
+    scenario = EnvironmentManager.load_scenario(args.scenario_name)
+    env = AdvertisingEnvironment(scenario)
 
     campaign = Campaign(args.n_subcampaigns, args.cum_budget, args.n_arms)
     bandit = get_bandit(bandit_name=args.bandit_name, campaign=campaign)
@@ -191,8 +191,8 @@ if args.save_result:
 
     # Plot cumulative regret and instantaneous reward
     rewards = np.mean(rewards, axis=0)
-    phases = EnvironmentManager.load_scenario(args.scenario_name)
-    env = AdvertisingEnvironment(args.n_subcampaigns, phases)
+    scenario = EnvironmentManager.load_scenario(args.scenario_name)
+    env = AdvertisingEnvironment(scenario)
     avg_regrets = []
     for reward in rewards:
         # The clairvoyance algorithm reward is the best reward he can get by sampling the environment

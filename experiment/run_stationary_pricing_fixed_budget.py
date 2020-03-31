@@ -115,10 +115,9 @@ def get_bandit(args, arm_values: np.array) -> DiscreteBandit:
 
 
 def main(args):
-    phases = EnvironmentManager.load_scenario(args.scenario_name)
-    n_subcampaigns = phases[0].get_n_subcampaigns()
-    env = PricingEnvironmentFixedBudget(n_subcampaigns, phases,
-                                        fixed_budget_allocation=[args.budget] * n_subcampaigns)
+    scenario = EnvironmentManager.load_scenario(args.scenario_name)
+    env = PricingEnvironmentFixedBudget(scenario,
+                                        fixed_budget_allocation=[args.budget] * scenario.get_n_subcampaigns())
 
     prices = get_prices(args=args)
     arm_profit = prices - args.unit_cost
@@ -195,4 +194,3 @@ if args.save_result:
     fd.write("Gamma parameter (EXP3) {}\n".format(args.gamma))
 
     fd.close()
-

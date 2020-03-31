@@ -1,10 +1,10 @@
-from typing import List
-
 import numpy as np
 
 from environments.Environment import Environment
-from environments.Phase import Phase
+from environments.Settings.Phase import Phase
 from typing import List
+
+from environments.Settings.Scenario import Scenario
 
 
 class PricingEnvironmentFixedBudget(Environment):
@@ -12,15 +12,15 @@ class PricingEnvironmentFixedBudget(Environment):
     Environment for the pricing scenario
     """
 
-    def __init__(self, n_subcampaigns: int, phases: List[Phase], fixed_budget_allocation: List[float]):
+    def __init__(self, scenario: Scenario, fixed_budget_allocation: List[float]):
         """
         Create a pricing stationary environment with a fixed budget
 
         :param fixed_budget_allocation: fixed budget allocation to be used in order to simulate the number of visits
         """
-        assert len(fixed_budget_allocation) == n_subcampaigns
+        assert len(fixed_budget_allocation) == scenario.get_n_subcampaigns()
 
-        super().__init__(n_subcampaigns, phases)
+        super().__init__(scenario)
         self.sampled_users: List = []
         self.fixed_budget_allocation = fixed_budget_allocation
         self.current_user_class = 0
