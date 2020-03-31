@@ -12,6 +12,7 @@ class CDCombinatorialBandit(CombinatorialBandit):
     """
     Change Detection combinatorial bandit
     """
+
     def __init__(self, campaign: Campaign, model_list: List[DiscreteRegressor], n_arms: int, gamma: float,
                  cd_threshold: float, sw_size: int):
         assert sw_size % 2 == 0
@@ -21,7 +22,7 @@ class CDCombinatorialBandit(CombinatorialBandit):
         self.gamma = gamma
         self.cd_threshold = cd_threshold
         self.sw_size = sw_size
-        self.last_detection_time = np.zeros(3)
+        self.last_detection_time = np.zeros(shape=campaign.get_n_sub_campaigns(), dtype=np.int)
 
         self.count_arm_after_detection = np.zeros(shape=(campaign.get_n_sub_campaigns(), n_arms))
         self.last_sw_arm_rewards = np.zeros(shape=(campaign.get_n_sub_campaigns(), n_arms, sw_size))
@@ -78,8 +79,11 @@ class CDCombinatorialBandit(CombinatorialBandit):
 
         for i, model in enumerate(self.model_list):
             if np.random.binomial(n=1, p=1 - self.gamma):
-                model.fit_model(collected_rewards=self.collected_rewards_sub_campaign[i][-self.last_detection_time[i]:],
-                                pulled_arm_history=self.pulled_arm_sub_campaign[i][-self.last_detection_time[i]:])
+                model.fit_model(collected_rewards=self.collected_rewards_sub_campaign[i][self.last_detection_time[i]:self.t],
+                                pulled_arm_history=self.pulled_arm_sub_campaign[i][self.last_detection_time[i]:self.t])
+                if (self.t - 1) == self.last_detection_time[i]:
+
+                    print(len(self.pulled_arm_sub_campaign[i][self.last_detection_time[i]:self.t]))
             else:
                 model.fit_model(collected_rewards=[],
                                 pulled_arm_history=[])
@@ -96,11 +100,16 @@ class CDCombinatorialBandit(CombinatorialBandit):
         :return: array containing a boolean for each sub-campaign if it should be re-set or not
         """
         arm_mask = self.count_arm_after_detection >= self.sw_size
-        campaign_mask = np.zeros(shape=self.campaign.get_n_sub_campaigns())
+        campaign_mask = np.zeros(shape=self.campaign.get_n_sub_campaigns(), dtype=np.bool)
         for i in range(self.campaign.get_n_sub_campaigns()):
             campaign_arm_mask = np.abs(self.last_sw_arm_rewards[i][arm_mask[i]][:, 0:self.sw_size // 2].sum(axis=1) -
-                                       self.last_sw_arm_rewards[i][arm_mask[i]][: -self.sw_size // 2:].sum(
+                                       self.last_sw_arm_rewards[i][arm_mask[i]][:, -self.sw_size // 2:].sum(
                                            axis=1)) > self.cd_threshold
             campaign_mask[i] = campaign_arm_mask.any()
 
+        if campaign_mask.any():
+            campaign_mask = np.ones(shape=self.campaign.get_n_sub_campaigns(), dtype=bool)
+
+        # print(campaign_mask.any())
+        # print(self.t)
         return campaign_mask

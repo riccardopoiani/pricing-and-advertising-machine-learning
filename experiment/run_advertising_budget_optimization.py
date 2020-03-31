@@ -66,9 +66,9 @@ def get_arguments():
     parser.add_argument("-sw", "--sw_size", help="Size of the sliding window for SW bandits", type=int)
     parser.add_argument("-gamma", "--gamma",
                         help="Controls the fraction of the uniform sampling over the number of arms",
-                        type=int, default=0.1)
+                        type=float, default=0.1)
     parser.add_argument("-cd_threshold", "--cd_threshold", help="Threshold used for change detection",
-                        type=int, default=0.1)
+                        type=float, default=0.1)
 
     # Store results
     parser.add_argument("-s", "--save_result", help="Whether to store results or not", type=lambda x: int(x) != 0,
@@ -126,7 +126,7 @@ def main(args):
     scenario = EnvironmentManager.load_scenario(args.scenario_name)
     env = AdvertisingEnvironment(scenario)
 
-    campaign = Campaign(args.n_subcampaigns, args.cum_budget, args.n_arms)
+    campaign = Campaign(scenario.get_n_subcampaigns(), args.cum_budget, args.n_arms)
     bandit = get_bandit(bandit_name=args.bandit_name, campaign=campaign)
     budget_allocation = [0, 0, 0]
 

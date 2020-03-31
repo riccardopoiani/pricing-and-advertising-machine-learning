@@ -25,7 +25,7 @@ class DiscreteGPRegressor(DiscreteRegressor):
                                                                      n_restarts_optimizer=self.n_restarts_optimizer)
 
     def fit_model(self, collected_rewards: np.array, pulled_arm_history: np.array):
-        if len(collected_rewards) == 0 or len(pulled_arm_history):
+        if len(collected_rewards) == 0 or len(pulled_arm_history) == 0:
             self.reset_parameters()
         else:
             x = np.atleast_2d(np.array(self.arms)[pulled_arm_history]).T
