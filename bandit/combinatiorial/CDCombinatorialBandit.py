@@ -10,29 +10,21 @@ from bandit.combinatiorial.CombinatorialBandit import CombinatorialBandit
 
 class CDCombinatorialBandit(CombinatorialBandit):
     """
-    Change Detection combinatorial bandit:
+    Change Detection combinatorial bandit
     """
-    # TODO
-    #  -check sw_size is an even number
-    #  -convert pulled_superarm_after_detection from List to array
-    #  -last_detection_time is a 3-D array! fix the pull_arm function
-    #  -change fit_model parameters: the hystory lenght of pulled_arms/rewards vary depending on the campaign
-    #  -add the bandit to the list in run_advertising_budget_optimizatio.py
-    #  -add / change comments
     def __init__(self, campaign: Campaign, model_list: List[DiscreteRegressor], n_arms: int, gamma: float,
                  cd_threshold: float, sw_size: int):
+        assert sw_size % 2 == 0
+
         super().__init__(campaign=campaign, model_list=model_list)
         self.n_arms = n_arms
         self.gamma = gamma
         self.cd_threshold = cd_threshold
         self.sw_size = sw_size
         self.last_detection_time = np.zeros(3)
-        self.pulled_superarm_after_detection = [[0 for _ in range(n_arms)]
-                                                for _ in range(campaign.get_n_sub_campaigns())]
-        self.last_sw_arm_rewards = np.zeros((campaign.get_n_sub_campaigns(), n_arms, sw_size))
 
-        self.collected_rewards_sub_campaign_after_detection = [[] for _ in range(campaign.get_n_sub_campaigns())]
-        self.pulled_arm_sub_campaign_after_detection = [[] for _ in range(campaign.get_n_sub_campaigns())]
+        self.count_arm_after_detection = np.zeros(shape=(campaign.get_n_sub_campaigns(), n_arms))
+        self.last_sw_arm_rewards = np.zeros(shape=(campaign.get_n_sub_campaigns(), n_arms, sw_size))
 
     def pull_arm(self) -> List[int]:
         """
@@ -43,13 +35,6 @@ class CDCombinatorialBandit(CombinatorialBandit):
 
         :return: the indices of the best budgets given the actual campaign
         """
-        #arm_idx = np.zeros(3)
-        #for i in range(self.campaign.get_n_sub_campaigns()):
-        #    arm_idx[i] = (self.t - self.last_detection_time[i]) % np.math.floor(self.n_arms / self.gamma)
-
-        #if arm_idx <= self.n_arms:
-        #    return arm_idx
-
         max_clicks, best_budgets = CampaignOptimizer.find_best_budgets(self.campaign)
         return [np.where(self.campaign.get_budgets() == budget)[0][0] for budget in best_budgets]
 
@@ -70,14 +55,10 @@ class CDCombinatorialBandit(CombinatorialBandit):
             self.pulled_arm_sub_campaign[i].append(pulled_arm[i])
             self.collected_rewards_sub_campaign[i].append(reward[i])
 
-        #
         for i in range(self.campaign.get_n_sub_campaigns()):
-            self.last_sw_arm_rewards[i][pulled_arm[i]][self.pulled_superarm_after_detection[i][pulled_arm[i]]] = reward[i]
-
-            self.pulled_superarm_after_detection[i][pulled_arm[i]] += 1
-            print(self.pulled_superarm_after_detection[i][pulled_arm[i]])
-            self.collected_rewards_sub_campaign_after_detection[i].append(reward[i])
-            self.pulled_arm_sub_campaign_after_detection[i].append(pulled_arm[i])
+            self.last_sw_arm_rewards[i][pulled_arm[i]] = np.roll(self.last_sw_arm_rewards[i][pulled_arm[i]], -1)
+            self.last_sw_arm_rewards[i][pulled_arm[i]][-1] = reward[i]
+            self.count_arm_after_detection[i][pulled_arm[i]] += 1
 
     def update(self, pulled_arm: List[int], reward: List[float]) -> None:
         """
@@ -90,39 +71,36 @@ class CDCombinatorialBandit(CombinatorialBandit):
         self.t += 1
         self.update_observations(pulled_arm, reward)
 
-        for i in range(self.campaign.get_n_sub_campaigns()):
-            if (self.pulled_superarm_after_detection[i][pulled_arm[i]]) >= self.sw_size:
+        campaign_mask = self._change_detection()
+        self.last_detection_time[campaign_mask] = self.t - 1
+        self.count_arm_after_detection[campaign_mask] = 0
+        self.last_sw_arm_rewards[campaign_mask] = 0
 
-                if self._change_detection(self.last_sw_arm_rewards[i][pulled_arm[i]]):
-                    self.last_detection_time[i] = self.t - 1
-                    for arm in range(self.n_arms):
-                        print("reset")
-                        print(t)
-                        self.pulled_superarm_after_detection[i][arm] = 0
-
-                    # remove all the appended elements to the subcampaign for which we encounter a detection
-                    for _ in range(len(self.pulled_arm_sub_campaign_after_detection[i])):
-                        del self.pulled_arm_sub_campaign_after_detection[i][0]
-                        del self.collected_rewards_sub_campaign_after_detection[i][0]
-
-        for sub_index, model in enumerate(self.model_list):
-            model.fit_model(collected_rewards=self.collected_rewards_sub_campaign_after_detection[sub_index],
-                            pulled_arm_history=self.pulled_arm_sub_campaign_after_detection[sub_index])
+        for i, model in enumerate(self.model_list):
+            if np.random.binomial(n=1, p=1 - self.gamma):
+                model.fit_model(collected_rewards=self.collected_rewards_sub_campaign[i][-self.last_detection_time[i]:],
+                                pulled_arm_history=self.pulled_arm_sub_campaign[i][-self.last_detection_time[i]:])
+            else:
+                model.fit_model(collected_rewards=[],
+                                pulled_arm_history=[])
 
             # Update estimations of the values of the sub-campaigns
-            sub_campaign_values = self.model_list[sub_index].sample_distribution()
-            self.campaign.set_sub_campaign(sub_index, sub_campaign_values)
+            sub_campaign_values = self.model_list[i].sample_distribution()
+            self.campaign.set_sub_campaign(i, sub_campaign_values)
 
-    def _change_detection(self, observations: np) -> int:
-        first_half = 0
-        second_half = 0
+    def _change_detection(self) -> np.array:
+        """
+        Change point detection mechanisms, as described in "Nearly optimal adaptive procedure with change
+        detection for piece-wise stationary bandit" [Kveton et. al]
 
-        for i in range(self.sw_size):
-            if i < (self.sw_size/2):
-                first_half += observations[i]
-            else:
-                second_half += observations[i]
+        :return: array containing a boolean for each sub-campaign if it should be re-set or not
+        """
+        arm_mask = self.count_arm_after_detection >= self.sw_size
+        campaign_mask = np.zeros(shape=self.campaign.get_n_sub_campaigns())
+        for i in range(self.campaign.get_n_sub_campaigns()):
+            campaign_arm_mask = np.abs(self.last_sw_arm_rewards[i][arm_mask[i]][:, 0:self.sw_size // 2].sum(axis=1) -
+                                       self.last_sw_arm_rewards[i][arm_mask[i]][: -self.sw_size // 2:].sum(
+                                           axis=1)) > self.cd_threshold
+            campaign_mask[i] = campaign_arm_mask.any()
 
-        if (second_half - first_half) > self.cd_threshold:
-            return True
-        return False
+        return campaign_mask
