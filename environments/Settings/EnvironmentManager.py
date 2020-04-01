@@ -117,10 +117,12 @@ class EnvironmentManager(object):
                 assert len(crp_functions) == n_subcampaigns
                 phases.append(Phase(phase_dict["duration"], n_clicks_functions, crp_functions))
 
-            user_distributions: Dict[Tuple[int], float] = {}
-            for key, value in data["user_distributions"].items():
+            min_context_to_subcampaign: Dict[Tuple[int], int] = {}
+            for key, value in data["min_context_to_subcampaign"].items():
                 user_tuple_key = tuple([int(value) for value in key.replace("(", "").replace(")", "").split(",")])
-                user_distributions[user_tuple_key] = value
 
-            scenario = Scenario(n_subcampaigns, n_user_features, user_distributions, phases)
+                assert n_subcampaigns > value >= 0  # verify that the min context refers to a valid subcampaign
+                min_context_to_subcampaign[user_tuple_key] = value
+
+            scenario = Scenario(n_subcampaigns, n_user_features, min_context_to_subcampaign, phases)
             return scenario

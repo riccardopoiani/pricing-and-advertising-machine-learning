@@ -7,6 +7,7 @@ class Node:
     """
     Class representing a general tree with integer information
     """
+
     def __init__(self, data: int):
         self.left: Optional[Node] = None
         self.right: Optional[Node] = None
@@ -28,15 +29,16 @@ class ContextGenerator(object):
 
     There is the assumption that all features are binary
     """
-    def __init__(self, n_features: int, confidence: float, rewards_per_context: Dict[Tuple[int], List[float]]):
+
+    def __init__(self, n_features: int, confidence: float, min_context_to_rewards_dict: Dict[Tuple[int], List[float]]):
         """
         :param n_features: the number of features
         :param confidence: the confidence for the calculation of lower bound
-        :param rewards_per_context: a dictionary from full-context to list of rewards
+        :param min_context_to_rewards_dict: a dictionary from min-context to list of rewards
         """
         self.n_features: int = n_features
         self.confidence: float = confidence
-        self.rewards_per_context: Dict[Tuple[int], List[float]] = rewards_per_context
+        self.min_context_to_rewards_dict: Dict[Tuple[int], List[float]] = min_context_to_rewards_dict
 
     @classmethod
     def get_hoeffding_lower_bound(cls, mean, confidence, cardinality):
@@ -57,51 +59,27 @@ class ContextGenerator(object):
             return context_structure
 
         if node.left is None and node.right is None:
-            left_current_context = current_context + [(node.data, 0)]
-            right_current_context = current_context + [(node.data, 1)]
+            # Leaf reached: create the context obtained from the root to the leaf and add it to the context structure
+            left_context = self.generate_context_per_features(current_context + [(node.data, 1)])
+            right_context = self.generate_context_per_features(current_context + [(node.data, 0)])
 
-            left_contexts = []
-            right_contexts = []
-            for f in range(self.n_features - len(left_current_context)):
-                context_str = format(f, "0" + str(self.n_features - len(left_current_context)) + "b")
-                context = list(map(int, context_str))
-                context_left = [-1] * self.n_features
-                context_right = [-1] * self.n_features
-
-                for idx, value in left_current_context:
-                    context_left[idx] = value
-
-                for idx, value in right_current_context:
-                    context_right[idx] = value
-
-                for i in range(len(context_left)):
-                    if context_left[i] == -1:
-                        value = context.pop(0)
-                        context_left[i] = value
-                        context_right[i] = value
-                context_left = tuple(context_left)
-                context_right = tuple(context_right)
-                left_contexts.append(context_left)
-                right_contexts.append(context_right)
-            context_structure.append(left_contexts)
-            context_structure.append(right_contexts)
+            context_structure.append(left_context)
+            context_structure.append(right_context)
             return context_structure
 
-        left_current_context = current_context + [(node.data, 0)]
-        right_current_context = current_context + [(node.data, 1)]
-
-        self.get_context_structure_from_tree(node.left, left_current_context, context_structure)
-        self.get_context_structure_from_tree(node.right, right_current_context, context_structure)
+        self.get_context_structure_from_tree(node.left, current_context + [(node.data, 0)], context_structure)
+        self.get_context_structure_from_tree(node.right, current_context + [(node.data, 1)], context_structure)
         return context_structure
 
-    def generate_context_structure_tree(self, features_set: Set, features_selected: List) -> Optional[Node]:
+    def generate_context_structure_tree(self, features_set: Set,
+                                        selected_features: List[Tuple[int, int]]) -> Optional[Node]:
         """
         Generates a tree containing information about the context structure chosen. By following the greedy algorithm,
         based on the comparison between split-case and non-split case, it chooses at each level, if the feature has to
         be split or not. It is a recursive function that returns the root of the tree
 
         :param features_set: the initial set of features which is commonly the set containing all features (indices)
-        :param features_selected: the feature selected during the process (in case you go left, the feature selected are
+        :param selected_features: the feature selected during the process (in case you go left, the feature selected are
                                   set to 0, while 1 if you go right on the tree)
         :return: the root of the tree
         """
@@ -112,20 +90,21 @@ class ContextGenerator(object):
         lower_bound_current_context_list = []
 
         for feature_idx in features_set:
-            rewards0, rewards1 = self.get_rewards_per_feature(feature_idx, features_selected)
-            lower_bound_p0 = self.get_hoeffding_lower_bound(len(rewards0) / (len(rewards0) + len(rewards1)),
-                                                            self.confidence, len(rewards0) + len(rewards1))
-            lower_bound_p1 = self.get_hoeffding_lower_bound(len(rewards1) / (len(rewards0) + len(rewards1)),
-                                                            self.confidence, len(rewards0) + len(rewards1))
-            lower_bound_v0 = self.get_hoeffding_lower_bound(sum(rewards0) / len(rewards0),
-                                                            self.confidence, len(rewards0))
-            lower_bound_v1 = self.get_hoeffding_lower_bound(sum(rewards1) / len(rewards1),
-                                                            self.confidence, len(rewards1))
+            rewards_0 = self.get_rewards_per_selected_features(selected_features + [(feature_idx, 0)])
+            rewards_1 = self.get_rewards_per_selected_features(selected_features + [(feature_idx, 1)])
+            lower_bound_p0 = self.get_hoeffding_lower_bound(len(rewards_0) / (len(rewards_0) + len(rewards_1)),
+                                                            self.confidence, len(rewards_0) + len(rewards_1))
+            lower_bound_p1 = self.get_hoeffding_lower_bound(len(rewards_1) / (len(rewards_0) + len(rewards_1)),
+                                                            self.confidence, len(rewards_0) + len(rewards_1))
+            lower_bound_v0 = self.get_hoeffding_lower_bound(sum(rewards_0) / len(rewards_0),
+                                                            self.confidence, len(rewards_0))
+            lower_bound_v1 = self.get_hoeffding_lower_bound(sum(rewards_1) / len(rewards_1),
+                                                            self.confidence, len(rewards_1))
             context_value = lower_bound_p0 * lower_bound_v0 + lower_bound_p1 * lower_bound_v1
             context_values.append(context_value)
             lower_bound_current_context = self.get_hoeffding_lower_bound(
-                (sum(rewards0) + sum(rewards1)) / (len(rewards0) + len(rewards1)),
-                self.confidence, len(rewards0) + len(rewards1))
+                (sum(rewards_0) + sum(rewards_1)) / (len(rewards_0) + len(rewards_1)),
+                self.confidence, len(rewards_0) + len(rewards_1))
             lower_bound_current_context_list.append(lower_bound_current_context)
 
         for i in range(len(lower_bound_current_context_list)):
@@ -133,15 +112,14 @@ class ContextGenerator(object):
         max_feature_idx = np.argmax(context_values)[0]
 
         if context_values[max_feature_idx] > lower_bound_current_context_list[0]:
+            # If the best feature among all the "feature_set" is prominent, then select the best and call the recursive
+            # function on the left child and right child
             features_set_child = features_set.copy()
             features_set_child.remove(max_feature_idx)
-            features_selected_child0 = features_selected.copy()
-            features_selected_child0.append((max_feature_idx, 0))
-            features_selected_child1 = features_selected.copy()
-            features_selected_child1.append((max_feature_idx, 1))
-
-            left_node = self.generate_context_structure_tree(features_set_child, features_selected_child0)
-            right_node = self.generate_context_structure_tree(features_set_child, features_selected_child1)
+            left_node = self.generate_context_structure_tree(features_set_child,
+                                                             selected_features + [(max_feature_idx, 0)])
+            right_node = self.generate_context_structure_tree(features_set_child,
+                                                              selected_features + [(max_feature_idx, 1)])
 
             node = Node(max_feature_idx)
             node.left = left_node
@@ -150,42 +128,38 @@ class ContextGenerator(object):
         else:
             return None
 
-    def get_rewards_per_feature(self, feature_idx, selected_features: List[Tuple[int]]) -> (List[float], List[float]):
+    def get_rewards_per_selected_features(self, selected_features: List[Tuple[int, int]]) -> (List[float], List[float]):
         """
-        Returns the rewards for a given split-feature (i.e. feature_idx) and selected-features (i.e. features that has
-        already selected 0 or 1). More specifically, it returns a tuple of rewards: one for the case of splitting with
-        split-feature = 0 and the other with split-feature = 1
+        Returns the rewards given a list of selected features
 
-        :param feature_idx: the index of the feature that has to be split
         :param selected_features: the list of tuple of (feature_idx, value) that represents the features already fixed
         :return: a tuple of reward of splitting with split-feature=0 and reward of splitting with split-feature=1
         """
-        feature0 = []
-        feature1 = []
+        context = self.generate_context_per_features(selected_features)
+
+        # Generate the rewards for the selected features
+        rewards_per_selected_features = []
+        for min_context in context:
+            rewards_per_selected_features.extend(self.min_context_to_rewards_dict[min_context])
+        return rewards_per_selected_features
+
+    def generate_context_per_features(self, selected_features: List[Tuple[int, int]]) -> List[Tuple[int]]:
+        """
+        Generate a context for the case (feature_idx=0, selected_features_left) as a tuple of integers
+
+        :param selected_features: the list of tuple of (feature_idx, value) that represents the features
+                                  already selected
+        :return: a context referring to (feature_idx=feature_value, selected_features)
+        """
+        context_per_features = []
         for f in range(self.n_features - 1 - len(selected_features)):
-            context_str = format(f, "0" + str(self.n_features - 1 - len(selected_features)) + "b")
-            context = list(map(int, context_str))
-            context0 = [-1] * self.n_features
-            for idx, value in selected_features:
-                context0[idx] = value
-            context1 = context0.copy()
-            context0[feature_idx] = 0
-            context1[feature_idx] = 1
+            combination_str = format(f, "0" + str(self.n_features - 1 - len(selected_features)) + "b")
+            combination_values = list(map(int, combination_str))
 
-            for i in range(len(context0)):
-                if context0[i] == -1:
-                    value = context.pop(0)
-                    context0[i] = value
-                    context1[i] = value
+            min_context = np.full(shape=self.n_features, fill_value=-1)
+            for feature_idx, feature_value in selected_features:
+                min_context[feature_idx] = feature_value
+            min_context[min_context == -1] = combination_values
 
-            feature0.append(tuple(context0))
-            feature1.append(tuple(context1))
-        rewards0 = []
-        rewards1 = []
-        for feature in feature0:
-            rewards0.extend(self.rewards_per_context[feature])
-
-        for feature in feature1:
-            rewards1.extend(self.rewards_per_context[feature])
-
-        return rewards0, rewards1
+            context_per_features.append(tuple(min_context))
+        return context_per_features

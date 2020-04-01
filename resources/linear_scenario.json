@@ -2,7 +2,7 @@
   "scenario_name": "Completely linear scenario",
   "n_subcampaigns": 3,
   "n_user_features": 2,
-  "user_distributions": {"(0,0)": 0.3, "(0,1)": 0.3, "(1,0)":  0.2, "(1,1)": 0.2},
+  "min_context_to_subcampaign": {"(0,0)": 0, "(0,1)": 1, "(1,0)":  2, "(1,1)": 2},
   "phases": [
     {
       "phase_name": "General phase",

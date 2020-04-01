@@ -15,24 +15,17 @@ class Scenario(object):
      - the sum of user distribution of all type of users (i.e. users with all features specified) is 1
     """
 
-    def __init__(self, n_subcampaigns: int, n_user_features: int, user_distributions: Dict[Tuple[int], float],
+    def __init__(self, n_subcampaigns: int, n_user_features: int, min_context_to_subcampaign: Dict[Tuple[int], int],
                  phases: List[Phase]):
         # Assertions
         for phase in phases:
             assert n_subcampaigns == phase.get_n_subcampaigns()
-
-        total_distribution = 0
-        n_combination_user_features = 0
-        for user_features, distribution in user_distributions.items():
-            total_distribution += distribution
-            n_combination_user_features += 1
-        assert n_combination_user_features == n_user_features**2
-        assert total_distribution == 1.0
+        assert len(min_context_to_subcampaign.keys()) == n_user_features ** 2
 
         self.n_subcampaigns = n_subcampaigns
         self.n_user_features = n_user_features
         self.phases = phases
-        self.user_distributions = user_distributions
+        self.user_distributions = min_context_to_subcampaign
 
     def get_n_subcampaigns(self):
         return self.n_subcampaigns

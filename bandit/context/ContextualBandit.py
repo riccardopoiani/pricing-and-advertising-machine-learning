@@ -14,10 +14,10 @@ class ContextualBandit(object):
     the specific user
 
     Notation:
-     - full-context refers to a context (i.e. subset of space of features) that has its cardinality = n_features
-     - a full-context is saved as a tuple of integers (e.g. (0, 0) for feature0 = 0 and feature1 = 0)
-     - a context structure is defined as a list of list of full context. Basically, a context is composed by one or many
-       full contexts
+     - min-context refers to a smallest context (i.e. context is subset of feature space) that has all features fixed
+     - a min-context is saved as a tuple of integers (e.g. (0, 0) for feature0 = 0 and feature1 = 0)
+     - a general context is defined as a list of min-context, therefore, a context structure is defined as a list of
+       general context
     """
 
     def __init__(self, n_features: int, confidence: float, context_generation_frequency: int,
@@ -29,7 +29,8 @@ class ContextualBandit(object):
         :param bandit_class: the class of the bandit to use
         :param bandit_kwargs: the parameters of the bandit class
         """
-        self.bandit_dict: Dict[Tuple[int], DiscreteBandit] = {}  # data structure that maps full contexts into bandits
+        # data structure that maps min contexts into bandits
+        self.min_context_to_bandit_dict: Dict[Tuple[int], DiscreteBandit] = {}
         self.frequency_context_generation: int = context_generation_frequency
         self.confidence: float = confidence
         self.n_features: int = n_features
@@ -38,20 +39,20 @@ class ContextualBandit(object):
         self.overall_bandit = bandit_class(**bandit_kwargs)
         self.context_structure: List[List[Tuple[int]]] = [[]]  #
 
-        # Assign for each full context the general bandit that uses aggregated information
+        # Assign for each min-context the general bandit that uses aggregated information
         for f in range(n_features):
             # Map integers into binary but saved inside a tuple of int
             full_context_str = format(f, "0" + str(n_features) + "b")
             full_context = tuple(map(int, full_context_str))
 
-            self.bandit_dict[full_context] = self.overall_bandit
+            self.min_context_to_bandit_dict[full_context] = self.overall_bandit
 
             # populate the context structure
             self.context_structure[0].append(full_context)
 
         # Set data structures to contain all information about features seen, pulled arms and collected rewards
         # (it is not information of the single bandit, but an aggregated information)
-        self.features_to_index_dict: Dict[Tuple[int], List[int]] = defaultdict(list)
+        self.min_context_to_index_dict: Dict[Tuple[int], List[int]] = defaultdict(list)
         self.pulled_arm_list: List[int] = []
         self.collected_rewards: List[float] = []
         self.day_t = 0
@@ -60,34 +61,34 @@ class ContextualBandit(object):
     def get_context_structure(self):
         return self.context_structure
 
-    def pull_arm(self, full_context: Tuple[int]):
+    def pull_arm(self, min_context: Tuple[int]):
         """
-        For a user with given full-context, choose the corresponding bandit with the full-context and pull from it
+        For a user with given min-context, choose the corresponding bandit with the min-context and pull from it
 
-        :param full_context: a full-context which is a tuple with cardinality equal to n_features
+        :param min_context: a min-context which is a tuple with cardinality equal to n_features
         :return: the index of the arm pulled
         """
-        for feature in full_context:
+        for feature in min_context:
             assert feature in {0, 1}
-        self.features_to_index_dict[full_context].append(self.t)
-        return self.bandit_dict[full_context].pull_arm()
+        self.min_context_to_index_dict[min_context].append(self.t)
+        return self.min_context_to_bandit_dict[min_context].pull_arm()
 
-    def update(self, full_context: Tuple[int], pulled_arm: int, reward: float):
+    def update(self, min_context: Tuple[int], pulled_arm: int, reward: float):
         """
         Update the contextual bandit by updating:
          - the time step
          - the ordered pulled arm list
          - the ordered collected rewards
-         - the bandit corresponding to the given full-context
+         - the bandit corresponding to the given min-context
 
-        :param full_context: the full-context of the previous pull_arm
+        :param min_context: the min-context of the previous pull_arm
         :param pulled_arm: the index of the pulled arm
         :param reward: the reward observed after pulling the arm
         """
         self.t += 1
         self.pulled_arm_list.append(pulled_arm)
         self.collected_rewards.append(reward)
-        self.bandit_dict[full_context].update(pulled_arm, reward)
+        self.min_context_to_bandit_dict[min_context].update(pulled_arm, reward)
 
     def next_day(self):
         """
@@ -99,7 +100,7 @@ class ContextualBandit(object):
 
         if self.day_t % self.frequency_context_generation == 0:
             rewards_per_feature: Dict[Tuple[int], List[float]] = {}
-            for feature, indices in self.features_to_index_dict.items():
+            for feature, indices in self.min_context_to_index_dict.items():
                 rewards_per_feature[feature] = list(np.array(self.collected_rewards)[indices])
 
             context_generator = ContextGenerator(self.n_features, self.confidence, rewards_per_feature)
@@ -109,13 +110,13 @@ class ContextualBandit(object):
 
             # Generate bandits
             for context in self.context_structure:
-                self.bandit_dict = {}
+                self.min_context_to_bandit_dict = {}
 
                 context_bandit = self.bandit_class(**self.bandit_kwargs)
                 context_bandit = self._train_individual_bandit(context_bandit, context)
 
-                for c in context:
-                    self.bandit_dict[c] = context_bandit
+                for min_context in context:
+                    self.min_context_to_bandit_dict[min_context] = context_bandit
 
     def _train_individual_bandit(self, bandit: DiscreteBandit, context: List[Tuple]) -> DiscreteBandit:
         """
@@ -127,9 +128,9 @@ class ContextualBandit(object):
         """
         pulled_arm_list = []
         collected_rewards = []
-        for c in context:
-            pulled_arm_list.extend(np.array(self.pulled_arm_list)[self.features_to_index_dict[c]])
-            collected_rewards.extend(np.array(self.collected_rewards)[self.features_to_index_dict[c]])
+        for min_context in context:
+            pulled_arm_list.extend(np.array(self.pulled_arm_list)[self.min_context_to_index_dict[min_context]])
+            collected_rewards.extend(np.array(self.collected_rewards)[self.min_context_to_index_dict[min_context]])
 
         for i in range(len(pulled_arm_list)):
             bandit.update(pulled_arm_list[i], collected_rewards[i])
