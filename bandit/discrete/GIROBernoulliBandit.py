@@ -79,3 +79,6 @@ class GIROBernoulliBandit(DiscreteBandit):
             zeros_list = [0 for _ in range(n_new_pseudo_rewards)]
             self.pseudo_reward_per_arm[pulled_arm].extend(ones_list)
             self.pseudo_reward_per_arm[pulled_arm].extend(zeros_list)
+
+    def get_optimal_arm(self) -> int:
+        pass

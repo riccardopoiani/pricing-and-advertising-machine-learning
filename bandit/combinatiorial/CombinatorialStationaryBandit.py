@@ -60,3 +60,7 @@ class CombinatorialStationaryBandit(CombinatorialBandit):
             # Update estimations of the values of the sub-campaigns
             sub_campaign_values = self.model_list[sub_index].sample_distribution()
             self.campaign.set_sub_campaign(sub_index, sub_campaign_values)
+
+    def get_optimal_arm(self) -> int:
+        # TODO
+        pass

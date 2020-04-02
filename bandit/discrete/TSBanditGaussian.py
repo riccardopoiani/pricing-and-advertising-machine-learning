@@ -31,3 +31,8 @@ class TSBanditGP(DiscreteBandit):
     def pull_arm(self):
         prob_per_arm = self.regressor.sample_distribution()
         return np.argmax(prob_per_arm)
+
+    def get_optimal_arm(self) -> int:
+        expected_rewards = self.regressor.means
+        return int(np.argmax(expected_rewards))
+

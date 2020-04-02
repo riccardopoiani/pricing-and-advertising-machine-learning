@@ -50,7 +50,8 @@ class ContextGenerator(object):
 
     @classmethod
     def get_hoeffding_lower_bound(cls, mean, confidence, cardinality):
-        # return mean
+        if cardinality == 0:
+            return -math.inf
         return mean - math.sqrt(-math.log(confidence) / (2 * cardinality))
 
     def get_context_structure_from_tree(self, node: Node, current_context: List[Tuple],
@@ -99,10 +100,18 @@ class ContextGenerator(object):
         lower_bound_current_context_list = []
 
         for feature_idx in features_set:
+            # Collect rewards and best rewards for each context (c_0, c_1 and c_total)
             rewards_0 = self.get_rewards_per_selected_features(selected_features + [(feature_idx, 0)])
-            best_rewards_0 = self.get_best_rewards_per_selected_features(selected_features + [(feature_idx, 0)])
             rewards_1 = self.get_rewards_per_selected_features(selected_features + [(feature_idx, 1)])
-            best_rewards_1 = self.get_best_rewards_per_selected_features(selected_features + [(feature_idx, 1)])
+            best_rewards_0 = self.get_best_rewards_by_training_bandit(selected_features + [(feature_idx, 0)])
+            best_rewards_1 = self.get_best_rewards_by_training_bandit(selected_features + [(feature_idx, 1)])
+            best_rewards_total = self.get_best_rewards_by_training_bandit(selected_features)
+
+            # Max-min normalize the best rewards (min = 0, max = max(all_rewards)
+            max_reward_value = np.max(list(self.min_context_to_rewards_dict.values()))
+            best_rewards_0 = best_rewards_0 / max_reward_value
+            best_rewards_1 = best_rewards_1 / max_reward_value
+            best_rewards_total = best_rewards_total / max_reward_value
 
             lower_bound_p0 = self.get_hoeffding_lower_bound(len(rewards_0) / (len(rewards_0) + len(rewards_1)),
                                                             self.confidence, len(rewards_0) + len(rewards_1))
@@ -117,15 +126,13 @@ class ContextGenerator(object):
             context_value = lower_bound_p0 * lower_bound_v0 + lower_bound_p1 * lower_bound_v1
             context_values.append(context_value)
 
-            best_rewards = self.get_best_rewards_per_selected_features(selected_features)
-
-            lower_bound_current_context = self.get_hoeffding_lower_bound(sum(best_rewards) / len(best_rewards),
-                                                                         self.confidence, len(best_rewards))
+            lower_bound_current_context = self.get_hoeffding_lower_bound(np.mean(best_rewards_total),
+                                                                         self.confidence, len(best_rewards_total))
             lower_bound_current_context_list.append(lower_bound_current_context)
 
         for i in range(len(lower_bound_current_context_list)):
             assert lower_bound_current_context_list[0] == lower_bound_current_context_list[i]
-        max_feature_idx = np.argmax(context_values)
+        max_feature_idx = int(np.argmax(context_values))
 
         if context_values[max_feature_idx] > lower_bound_current_context_list[0]:
             # If the best feature among all the "feature_set" is prominent, then select the best and call the recursive
@@ -149,23 +156,22 @@ class ContextGenerator(object):
         pulled_arms = self.get_pulled_arms_per_selected_features(selected_features)
         expected_rewards = []
         for a in np.unique(pulled_arms):
-            expected_reward = np.mean(np.array(rewards)[np.argwhere(pulled_arms==a)])
+            expected_reward = np.mean(np.array(rewards)[np.argwhere(pulled_arms == a)])
             expected_rewards.append(expected_reward)
         max_expected_reward_idx = np.argmax(expected_rewards)
         optimal_arm = np.unique(pulled_arms)[max_expected_reward_idx]
         return np.array(rewards)[np.argwhere(pulled_arms == optimal_arm).flatten()]
 
-    # def train_bandit(self, selected_features: List[Tuple[int, int]]) -> Tuple[List[float], List[float]]:
-    #     bandit: DiscreteBandit = self.bandit_class(**self.bandit_kwargs)
-    #     rewards = self.get_rewards_per_selected_features(selected_features)
-    #     pulled_arms = self.get_pulled_arms_per_selected_features(selected_features)
-    #     for i in range(len(pulled_arms)):
-    #         arm = pulled_arms[i]
-    #         reward = rewards[i]
-    #         bandit.update(arm, reward)
-    #     optimal_arm = np.argmax(bandit.)
-    #     best_rewards = bandit.rewards_per_arm[optimal_arm]
-    #     return best_rewards, rewards
+    def get_best_rewards_by_training_bandit(self, selected_features: List[Tuple[int, int]]) -> List[float]:
+        bandit: DiscreteBandit = self.bandit_class(**self.bandit_kwargs)
+        rewards = self.get_rewards_per_selected_features(selected_features)
+        pulled_arms = self.get_pulled_arms_per_selected_features(selected_features)
+        for i in range(len(pulled_arms)):
+            arm = pulled_arms[i]
+            reward = rewards[i]
+            bandit.update(arm, reward)
+        best_rewards = bandit.rewards_per_arm[bandit.get_optimal_arm()]
+        return best_rewards
 
     def get_rewards_per_selected_features(self, selected_features: List[Tuple[int, int]]) -> List[float]:
         """
@@ -218,6 +224,3 @@ class ContextGenerator(object):
 
             context_per_features.append(tuple(min_context))
         return context_per_features
-
-
-

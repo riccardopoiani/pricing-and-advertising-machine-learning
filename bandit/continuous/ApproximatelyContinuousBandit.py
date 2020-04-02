@@ -34,3 +34,7 @@ class ApproximatelyContinuousBandit(IBandit):
 
     def get_curr_arm_values(self):
         return self.curr_arm_values.copy()
+
+    def get_optimal_arm(self) -> int:
+        # TODO: TO BE IMPLEMENTED ?!!
+        pass

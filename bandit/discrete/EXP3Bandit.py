@@ -65,3 +65,6 @@ class EXP3Bandit(DiscreteBandit):
 
         # update the weight of the pulled arm
         self.weight_per_arm[pulled_arm] *= np.math.exp(self.expected_rewards[pulled_arm] * self.gamma / self.n_arms)
+
+    def get_optimal_arm(self) -> int:
+        return int(np.argmax(self.expected_rewards))

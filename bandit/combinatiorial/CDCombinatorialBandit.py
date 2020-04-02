@@ -113,3 +113,7 @@ class CDCombinatorialBandit(CombinatorialBandit):
         # print(campaign_mask.any())
         # print(self.t)
         return campaign_mask
+
+    def get_optimal_arm(self) -> int:
+        # TODO
+        pass

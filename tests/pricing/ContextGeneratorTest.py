@@ -64,4 +64,7 @@ class ContextGeneratorTestCase(unittest.TestCase):
         feature_set = {0, 1}
         selected_features = []
         root = self.context_generator_2.generate_context_structure_tree(feature_set, selected_features)
-        pass
+
+        self.assertTrue(root.data == 0)
+        self.assertTrue(root.left is None)
+        self.assertTrue(root.right is None)

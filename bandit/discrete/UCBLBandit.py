@@ -74,3 +74,7 @@ class UCBLBandit(DiscreteBandit):
         # update upper confidence bound
         self.upper_bound = self.expected_bernoulli + np.sqrt((8 * self.crp_upper_bound * np.log(self.t))
                                                              / self.round_per_arm)
+
+    def get_optimal_arm(self) -> int:
+        expected_rewards = self.expected_bernoulli*self.arm_values
+        return int(np.argmax(expected_rewards))

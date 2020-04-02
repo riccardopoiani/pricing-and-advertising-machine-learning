@@ -21,9 +21,17 @@ class TSBanditRescaledBernoulli(DiscreteBandit):
 
         :return: index of the arm to be pulled
         """
-        idx = np.argmax(self.sample_beta_distribution() * self.arm_values)
-        # TODO fix warning
+        idx = int(np.argmax(self.sample_beta_distribution() * self.arm_values))
         return idx
+
+    def get_optimal_arm(self) -> int:
+        alpha = self.beta_distribution[:, 0]
+        beta = self.beta_distribution[:, 1]
+        expected_rewards = np.zeros(shape=self.n_arms)
+        valid_arms = np.array([len(rewards) for rewards in self.rewards_per_arm]) > 0
+        expected_rewards[valid_arms] = (alpha[valid_arms] / (alpha[valid_arms] +
+                                                             beta[valid_arms])) * self.arm_values[valid_arms]
+        return int(np.argmax(expected_rewards))
 
     def update(self, pulled_arm, reward) -> None:
         """
@@ -58,8 +66,8 @@ class TSBanditRescaledBernoulli(DiscreteBandit):
         :param reward: observed reward of pulled_arm
         :return: none
         """
-        #self.arm_count[pulled_arm]+=1
-        #print(self.arm_count)
+        # self.arm_count[pulled_arm]+=1
+        # print(self.arm_count)
         if reward != 0:
             reward = 1
         self.beta_distribution[pulled_arm, 0] += reward

@@ -108,3 +108,6 @@ class LinPHE(DiscreteBandit):
 
         # Update time
         self.t += 1
+
+    def get_optimal_arm(self) -> int:
+        pass

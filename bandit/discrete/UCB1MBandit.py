@@ -85,3 +85,7 @@ class UCB1MBandit(DiscreteBandit):
             # minimize the list of possible bounds by the starting_arm
             # and assign the minimized term to the upper bound of arm a
             self.upper_bound[a] = min(bound_list)
+
+    def get_optimal_arm(self) -> int:
+        expected_rewards = self.expected_bernoulli*self.arm_values
+        return int(np.argmax(expected_rewards))

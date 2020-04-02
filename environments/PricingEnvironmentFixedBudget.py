@@ -1,9 +1,8 @@
+from typing import List
+
 import numpy as np
 
 from environments.Environment import Environment
-from environments.Settings.Phase import Phase
-from typing import List
-
 from environments.Settings.Scenario import Scenario
 
 

@@ -58,3 +58,6 @@ class UCB1Bandit(DiscreteBandit):
                                              reward) / self.round_per_arm[pulled_arm]
         # update upper confidence bound
         self.upper_bound = self.expected_rewards + np.sqrt((2 * np.log(self.t) / self.round_per_arm))
+
+    def get_optimal_arm(self) -> int:
+        return int(np.argmax(self.expected_rewards))
