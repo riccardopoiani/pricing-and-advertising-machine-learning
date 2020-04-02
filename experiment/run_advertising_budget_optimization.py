@@ -204,7 +204,7 @@ if args.save_result:
     env = AdvertisingEnvironment(scenario)
     avg_regrets = []
     for reward in rewards:
-        # The clairvoyance algorithm reward is the best reward he can get by sampling the environment
+        # The clairvoyant algorithm reward is the best reward he can get by sampling the environment
         # from the best budget allocation
         opt = sum(env.round(BEST_BUDGET_ALLOCATION))
         avg_regrets.append(opt - reward)

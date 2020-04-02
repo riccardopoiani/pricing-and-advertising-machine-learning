@@ -66,6 +66,8 @@ class ContextGenerator(object):
         :return: the reference of the context_structure given at the start of the recursive function
         """
         if node is None:
+            temp_context = self.generate_context_per_features(current_context)
+            context_structure.append(temp_context)
             return context_structure
 
         if node.left is None and node.right is None:
@@ -81,7 +83,7 @@ class ContextGenerator(object):
         self.get_context_structure_from_tree(node.right, current_context + [(node.data, 1)], context_structure)
         return context_structure
 
-    def generate_context_structure_tree(self, features_set: Set,
+    def generate_context_structure_tree(self, features_set: List,
                                         selected_features: List[Tuple[int, int]]) -> Optional[Node]:
         """
         Generates a tree containing information about the context structure chosen. By following the greedy algorithm,
@@ -99,6 +101,11 @@ class ContextGenerator(object):
         context_values = []
         lower_bound_current_context_list = []
 
+        values = []
+        for v in self.min_context_to_rewards_dict.values():
+            values += v
+        max_reward_value = max(values)
+
         for feature_idx in features_set:
             # Collect rewards and best rewards for each context (c_0, c_1 and c_total)
             rewards_0 = self.get_rewards_per_selected_features(selected_features + [(feature_idx, 0)])
@@ -108,10 +115,9 @@ class ContextGenerator(object):
             best_rewards_total = self.get_best_rewards_by_training_bandit(selected_features)
 
             # Max-min normalize the best rewards (min = 0, max = max(all_rewards)
-            max_reward_value = np.max(list(self.min_context_to_rewards_dict.values()))
-            best_rewards_0 = best_rewards_0 / max_reward_value
-            best_rewards_1 = best_rewards_1 / max_reward_value
-            best_rewards_total = best_rewards_total / max_reward_value
+            best_rewards_0 = np.array(best_rewards_0) / max_reward_value
+            best_rewards_1 = np.array(best_rewards_1) / max_reward_value
+            best_rewards_total = np.array(best_rewards_total) / max_reward_value
 
             lower_bound_p0 = self.get_hoeffding_lower_bound(len(rewards_0) / (len(rewards_0) + len(rewards_1)),
                                                             self.confidence, len(rewards_0) + len(rewards_1))
@@ -138,29 +144,18 @@ class ContextGenerator(object):
             # If the best feature among all the "feature_set" is prominent, then select the best and call the recursive
             # function on the left child and right child
             features_set_child = features_set.copy()
-            features_set_child.remove(max_feature_idx)
+            features_set_child.remove(features_set[max_feature_idx])
             left_node = self.generate_context_structure_tree(features_set_child,
-                                                             selected_features + [(max_feature_idx, 0)])
+                                                             selected_features + [(features_set[max_feature_idx], 0)])
             right_node = self.generate_context_structure_tree(features_set_child,
-                                                              selected_features + [(max_feature_idx, 1)])
+                                                              selected_features + [(features_set[max_feature_idx], 1)])
 
-            node = Node(max_feature_idx)
+            node = Node(features_set[max_feature_idx])
             node.left = left_node
             node.right = right_node
             return node
         else:
             return None
-
-    def get_best_rewards_per_selected_features(self, selected_features: List[Tuple[int, int]]) -> List[float]:
-        rewards = self.get_rewards_per_selected_features(selected_features)
-        pulled_arms = self.get_pulled_arms_per_selected_features(selected_features)
-        expected_rewards = []
-        for a in np.unique(pulled_arms):
-            expected_reward = np.mean(np.array(rewards)[np.argwhere(pulled_arms == a)])
-            expected_rewards.append(expected_reward)
-        max_expected_reward_idx = np.argmax(expected_rewards)
-        optimal_arm = np.unique(pulled_arms)[max_expected_reward_idx]
-        return np.array(rewards)[np.argwhere(pulled_arms == optimal_arm).flatten()]
 
     def get_best_rewards_by_training_bandit(self, selected_features: List[Tuple[int, int]]) -> List[float]:
         bandit: DiscreteBandit = self.bandit_class(**self.bandit_kwargs)
@@ -210,6 +205,8 @@ class ContextGenerator(object):
             min_context = np.full(shape=self.n_features, fill_value=-1)
             for feature_idx, feature_value in selected_features:
                 min_context[feature_idx] = feature_value
+            if len(np.where(min_context == -1)[0]) > 0:
+                print("no")
             context_per_features.append(tuple(min_context))
             return context_per_features
 

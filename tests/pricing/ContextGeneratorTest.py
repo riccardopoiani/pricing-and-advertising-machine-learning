@@ -20,6 +20,19 @@ class ContextGeneratorTestCase(unittest.TestCase):
                                                     min_context_to_pulled_arms_dict, UCB1Bandit, n_arms=10,
                                                     arm_values=np.linspace(0, 1, 10))
 
+        min_context_to_rewards_dict = {(0, 0): [100, 100, 200, 200, 200],
+                                       (0, 1): [100, 100, 200, 200, 200],
+                                       (1, 0): [100, 100, 200, 200, 200, 300, 300, 300],
+                                       (1, 1): [100, 100, 200, 200, 200, 50, 50, 50]}
+        min_context_to_pulled_arms_dict = {(0, 0): [3, 3, 2, 2, 2],
+                                           (0, 1): [3, 3, 2, 2, 2],
+                                           (1, 0): [2, 2, 3, 3, 3, 1, 1, 1],
+                                           (1, 1): [2, 2, 3, 3, 3, 1, 1, 1]}
+
+        self.context_generator_2_1 = ContextGenerator(2, 0.95, min_context_to_rewards_dict,
+                                                      min_context_to_pulled_arms_dict, UCB1Bandit, n_arms=10,
+                                                      arm_values=np.linspace(0, 1, 10))
+
     def test_generate_context_per_all_features(self):
         selected_features = [(0, 1,), (1, 0,)]
         context = self.context_generator_2.generate_context_per_features(selected_features)
@@ -61,10 +74,36 @@ class ContextGeneratorTestCase(unittest.TestCase):
         self.assertTrue(rewards == expected_rewards)
 
     def test_generate_context_structure_tree(self):
-        feature_set = {0, 1}
+        feature_set = [0, 1]
         selected_features = []
         root = self.context_generator_2.generate_context_structure_tree(feature_set, selected_features)
 
         self.assertTrue(root.data == 0)
         self.assertTrue(root.left is None)
         self.assertTrue(root.right is None)
+
+    def test_generate_context_structure_tree_2(self):
+        feature_set = [0, 1]
+        selected_features = []
+        root = self.context_generator_2_1.generate_context_structure_tree(feature_set, selected_features)
+
+        self.assertTrue(root.data == 1)
+        self.assertTrue(root.left is None)
+        self.assertTrue(root.right is not None)
+        self.assertTrue(root.right.data == 0)
+
+    def test_get_context_structure_tree(self):
+        feature_set = [0, 1]
+        selected_features = []
+        root = self.context_generator_2.generate_context_structure_tree(feature_set, selected_features)
+        context_structure = []
+        context_structure = self.context_generator_2.get_context_structure_from_tree(root, [], context_structure)
+        self.assertTrue(context_structure == [[(1, 0), (1, 1)], [(0, 0), (0, 1)]])
+
+    def test_get_context_structure_tree_2(self):
+        feature_set = [0, 1]
+        selected_features = []
+        root = self.context_generator_2_1.generate_context_structure_tree(feature_set, selected_features)
+        context_structure = []
+        context_structure = self.context_generator_2_1.get_context_structure_from_tree(root, [], context_structure)
+        self.assertTrue(context_structure == [[(0, 0), (1, 0)], [(1, 1)], [(0, 1)]])

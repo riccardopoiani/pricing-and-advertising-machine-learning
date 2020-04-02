@@ -40,7 +40,7 @@ class ContextualBandit(object):
         self.context_structure: List[List[Tuple[int]]] = [[]]  #
 
         # Assign for each min-context the general bandit that uses aggregated information
-        for f in range(n_features):
+        for f in range(2**n_features):
             # Map integers into binary but saved inside a tuple of int
             full_context_str = format(f, "0" + str(n_features) + "b")
             full_context = tuple(map(int, full_context_str))
@@ -100,17 +100,20 @@ class ContextualBandit(object):
 
         if self.day_t % self.frequency_context_generation == 0:
             rewards_per_feature: Dict[Tuple[int], List[float]] = {}
+            pulled_arms_per_feature: Dict[Tuple[int], List[int]] = {}
             for feature, indices in self.min_context_to_index_dict.items():
                 rewards_per_feature[feature] = list(np.array(self.collected_rewards)[indices])
+                pulled_arms_per_feature[feature] = list(np.array(self.pulled_arm_list)[indices])
 
-            context_generator = ContextGenerator(self.n_features, self.confidence, rewards_per_feature)
-            root_node = context_generator.generate_context_structure_tree({f for f in range(self.n_features)}, [])
-            context_structure = [[]]
+            context_generator = ContextGenerator(self.n_features, self.confidence, rewards_per_feature,
+                                                 pulled_arms_per_feature, self.bandit_class, **self.bandit_kwargs)
+            root_node = context_generator.generate_context_structure_tree([f for f in range(self.n_features)], [])
+            context_structure = []
             self.context_structure = context_generator.get_context_structure_from_tree(root_node, [], context_structure)
 
             # Generate bandits
+            self.min_context_to_bandit_dict = {}
             for context in self.context_structure:
-                self.min_context_to_bandit_dict = {}
 
                 context_bandit = self.bandit_class(**self.bandit_kwargs)
                 context_bandit = self._train_individual_bandit(context_bandit, context)
