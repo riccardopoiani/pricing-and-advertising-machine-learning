@@ -12,6 +12,7 @@ from joblib import Parallel, delayed
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
+from environments.GeneralEnvironment import PricingAdvertisingJointEnvironment
 from advertising.regressors import DiscreteRegressor
 from advertising.regressors.DiscreteGPRegressor import DiscreteGPRegressor
 from advertising.regressors.DiscreteGaussianRegressor import DiscreteGaussianRegressor
@@ -123,7 +124,7 @@ def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e6, 
 
 def main(args):
     scenario = EnvironmentManager.load_scenario(args.scenario_name)
-    env = AdvertisingEnvironment(scenario)
+    env = PricingAdvertisingJointEnvironment(scenario)
 
     campaign = Campaign(scenario.get_n_subcampaigns(), args.cum_budget, args.n_arms)
     bandit = get_bandit(bandit_name=args.bandit_name, campaign=campaign)
@@ -135,7 +136,9 @@ def main(args):
         budget_allocation = [int(campaign.get_budgets()[i]) for i in budget_allocation_indexes]
 
         # Observe reward
-        rewards = env.round(budget_allocation=budget_allocation)
+        env.set_budget_allocation(budget_allocation=budget_allocation)
+        env.next_day()
+        rewards = env.get_daily_visits_per_sub_campaign()
 
         # Update bandit
         bandit.update(pulled_arm=budget_allocation_indexes, reward=rewards)

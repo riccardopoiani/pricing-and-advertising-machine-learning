@@ -9,7 +9,7 @@ from joblib import Parallel, delayed
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
-from environments.PricingEnvironmentFixedBudget import PricingEnvironmentFixedBudget
+from environments.GeneralEnvironment import PricingAdvertisingJointEnvironment
 from bandit.discrete import DiscreteBandit
 from bandit.discrete.EXP3Bandit import EXP3Bandit
 from bandit.discrete.TSBanditRescaledBernoulli import TSBanditRescaledBernoulli
@@ -116,20 +116,30 @@ def get_bandit(args, arm_values: np.array) -> DiscreteBandit:
 
 def main(args):
     scenario = EnvironmentManager.load_scenario(args.scenario_name)
-    env = PricingEnvironmentFixedBudget(scenario,
-                                        fixed_budget_allocation=[args.budget] * scenario.get_n_subcampaigns())
+    env = PricingAdvertisingJointEnvironment(scenario)
+    env.set_budget_allocation([args.budget] * scenario.get_n_subcampaigns())
 
     prices = get_prices(args=args)
     arm_profit = prices - args.unit_cost
     bandit = get_bandit(args=args, arm_values=arm_profit)
+
+    iterate = not env.next_day()
+    while iterate:
+        iterate = not env.next_day()
 
     for _ in range(0, args.n_rounds):
         # Choose arm
         price_idx = bandit.pull_arm()
 
         # Observe reward
-        env.simulate_user_arrive()
-        reward = env.round(price=prices[price_idx]) * arm_profit[price_idx]
+        env.next_user()
+        reward, elapsed_day = env.round(price=prices[price_idx])
+        reward = reward * arm_profit[price_idx]
+
+        if elapsed_day:
+            iterate = not env.next_day()
+            while iterate:
+                iterate = not env.next_day()
 
         # Update bandit
         bandit.update(pulled_arm=price_idx, reward=reward)

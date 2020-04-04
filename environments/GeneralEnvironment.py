@@ -36,29 +36,33 @@ class PricingAdvertisingJointEnvironment(Environment):
         self.user_count += 1
         return self.current_phase.get_crp(class_idx=self.current_user_class, price=price), len(self.sampled_users) == 0
 
-    def next_day(self) -> None:
+    def next_day(self) -> bool:
         """
-        Next day has begin: sample daily users users from the current budget allocation
+        Next day has begin: sample daily users users from the current budget allocation.
 
-        :return None
+        :return true if users has arrived during the next day, false otherwise
         """
         # Check if the day is over: in this case, samples users from the number of visits distribution
         self.current_phase = self.get_current_phase()
+        self.sampled_users = []
 
-        while len(self.sampled_users) == 0:
-            n_users_list = self.current_phase.get_all_n_clicks(budget_allocation=self.budget_allocation)
-            for i in range(len(n_users_list)):
-                min_contexts = self.scenario.get_min_contexts_for_subcampaign(i)
-                for min_context in min_contexts:
-                    self.sampled_users.extend([min_context] * int((n_users_list[i]) / len(min_contexts)))
+        n_users_list = self.current_phase.get_all_n_clicks(budget_allocation=self.budget_allocation)
+        for i in range(len(n_users_list)):
+            min_contexts = self.scenario.get_min_contexts_for_subcampaign(i)
+            for min_context in min_contexts:
+                self.sampled_users.extend([min_context] * int((n_users_list[i]) / len(min_contexts)))
 
         np.random.shuffle(self.sampled_users)
-        self.daily_users = self.sampled_users.copy()
+
+        self.daily_users = np.array([self.scenario.get_min_context_to_subcampaign_dict().get(context)
+                                     for context in self.sampled_users])
 
         self.day_t += 1
         self.day_breakpoints.append(self.user_count)
 
-    def get_user_features(self) -> (Tuple[int, ...], int):
+        return len(self.daily_users) > 0
+
+    def next_user(self) -> (Tuple[int, ...], int):
         """
         Removes the current users from the list of the sampled users for the current day and
         returns its features and its class
@@ -66,7 +70,7 @@ class PricingAdvertisingJointEnvironment(Environment):
         :return: current user features, and the class of the user
         """
         current_user_min_context = self.sampled_users.pop()
-        self.current_user_class = self.scenario.get_min_context_to_subcampaign_dict().get(current_user_min_context )
+        self.current_user_class = self.scenario.get_min_context_to_subcampaign_dict().get(current_user_min_context)
         return current_user_min_context, self.current_user_class
 
     def set_budget_allocation(self, budget_allocation: List[float]) -> None:
@@ -86,4 +90,4 @@ class PricingAdvertisingJointEnvironment(Environment):
         """
         :return: daily visits for each sub-campaign
         """
-        return [np.array(self.daily_users == i).size for i in range(self.scenario.get_n_subcampaigns())]
+        return [len(np.where(self.daily_users == i)[0]) for i in range(self.scenario.get_n_subcampaigns())]

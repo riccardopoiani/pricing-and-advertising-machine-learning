@@ -19,7 +19,7 @@ from bandit.combinatiorial.CombinatorialBandit import CombinatorialBandit
 from bandit.combinatiorial.CombinatorialStationaryBandit import CombinatorialStationaryBandit
 from bandit.combinatiorial.SWCombinatorialBandit import SWCombinatorialBandit
 from bandit.joint.JointBandit import JointBandit
-from environments.PricingAdvertisingJointEnvironment import PricingAdvertisingJointEnvironment
+from environments.GeneralEnvironment import PricingAdvertisingJointEnvironment
 from bandit.discrete import DiscreteBandit
 from bandit.discrete.EXP3Bandit import EXP3Bandit
 from bandit.discrete.TSBanditRescaledBernoulli import TSBanditRescaledBernoulli
@@ -211,7 +211,7 @@ def main(args):
 
         while elapsed_day:
             # Retrieve user class
-            user_class = env.get_user_features()[1]
+            user_class = env.next_user()[1]
 
             # Choose arm
             price_idx = bandit.pull_price(user_class=user_class)
