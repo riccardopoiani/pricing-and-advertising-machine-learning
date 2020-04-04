@@ -1,0 +1,73 @@
+{
+  "scenario_name": "Test scenario",
+  "n_subcampaigns": 3,
+  "n_user_features": 2,
+  "min_context_to_subcampaign": {"(0,0)": 0, "(0,1)": 1, "(1,0)":  2, "(1,1)": 2},
+  "phases": [
+    {
+      "phase_name": "General phase",
+      "duration": 10000,
+      "crp_functions": [
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 0.04,
+            "min_price": 0,
+            "max_price": 25,
+            "max_crp": 1
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 0.1,
+            "min_price": 0,
+            "max_price": 25,
+            "max_crp": 1
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 0.023,
+            "min_price": 0,
+            "max_price": 25,
+            "max_crp": 1
+          }
+        }
+      ],
+      "n_clicks_functions": [
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 3.5,
+            "bias": 0,
+            "lower_bound": 0,
+            "upper_bound": 10000,
+            "noise_std": 25
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 3.5,
+            "bias": 0,
+            "lower_bound": 0,
+            "upper_bound": 10000,
+            "noise_std": 25
+          }
+        },
+        {
+          "type": "linear",
+          "info": {
+            "coefficient": 3.5,
+            "bias": 0,
+            "lower_bound": 0,
+            "upper_bound": 10000,
+            "noise_std": 25
+          }
+        }
+      ]
+    }
+  ]
+}

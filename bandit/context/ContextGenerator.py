@@ -1,5 +1,5 @@
+import itertools
 from typing import Dict, Tuple, List, Set, Optional
-import math
 import numpy as np
 
 from bandit.discrete.DiscreteBandit import DiscreteBandit
@@ -7,7 +7,7 @@ from bandit.discrete.DiscreteBandit import DiscreteBandit
 
 class Node:
     """
-    Class representing a general tree with integer information
+    Class representing a node of a general tree with integer information
     """
 
     def __init__(self, data: int):
@@ -43,6 +43,7 @@ class ContextGenerator(object):
         """
         self.n_features: int = n_features
         self.confidence: float = confidence
+        self.max_arm_value: float = np.max(bandit_kwargs["arm_values"])
         self.min_context_to_rewards_dict: Dict[Tuple[int, ...], List[float]] = min_context_to_rewards_dict
         self.min_context_to_pulled_arm_dict: Dict[Tuple[int, ...], List[int]] = min_context_to_pulled_arm_dict
         self.bandit_class: DiscreteBandit.__class__ = bandit_class
@@ -51,8 +52,8 @@ class ContextGenerator(object):
     @classmethod
     def get_hoeffding_lower_bound(cls, mean, confidence, cardinality):
         if cardinality == 0:
-            return -math.inf
-        return mean - math.sqrt(-math.log(confidence) / (2 * cardinality))
+            return -np.inf
+        return mean - np.sqrt(-np.log(confidence) / (2 * cardinality))
 
     def get_context_structure_from_tree(self, node: Node, current_context: List[Tuple],
                                         context_structure: List[List[Tuple]]) -> List[List[Tuple]]:
@@ -83,6 +84,28 @@ class ContextGenerator(object):
         self.get_context_structure_from_tree(node.right, current_context + [(node.data, 1)], context_structure)
         return context_structure
 
+    def continue_generation_context_structure_tree(self, node: Node, feature_set: List[int],
+                                                   feature_selected: List[Tuple[int, int]]) -> Node:
+        """
+
+        :param node:
+        :param feature_set:
+        :param feature_selected:
+        :return:
+        """
+        if node is None:
+            new_node = self.generate_context_structure_tree(feature_set, feature_selected)
+            return new_node
+        feature_set_child = feature_set.copy()
+        feature_set_child.remove(node.data)
+        left_child = self.continue_generation_context_structure_tree(node.left, feature_set_child,
+                                                                     feature_selected + [(node.data, 0)])
+        right_child = self.continue_generation_context_structure_tree(node.left, feature_set_child,
+                                                                      feature_selected + [(node.data, 1)])
+        node.left = left_child
+        node.right = right_child
+        return node
+
     def generate_context_structure_tree(self, features_set: List,
                                         selected_features: List[Tuple[int, int]]) -> Optional[Node]:
         """
@@ -101,11 +124,6 @@ class ContextGenerator(object):
         context_values = []
         lower_bound_current_context_list = []
 
-        values = []
-        for v in self.min_context_to_rewards_dict.values():
-            values += v
-        max_reward_value = max(values)
-
         for feature_idx in features_set:
             # Collect rewards and best rewards for each context (c_0, c_1 and c_total)
             rewards_0 = self.get_rewards_per_selected_features(selected_features + [(feature_idx, 0)])
@@ -115,18 +133,18 @@ class ContextGenerator(object):
             best_rewards_total = self.get_best_rewards_by_training_bandit(selected_features)
 
             # Max-min normalize the best rewards (min = 0, max = max(all_rewards)
-            best_rewards_0 = np.array(best_rewards_0) / max_reward_value
-            best_rewards_1 = np.array(best_rewards_1) / max_reward_value
-            best_rewards_total = np.array(best_rewards_total) / max_reward_value
+            best_rewards_0 = np.array(best_rewards_0) / self.max_arm_value
+            best_rewards_1 = np.array(best_rewards_1) / self.max_arm_value
+            best_rewards_total = np.array(best_rewards_total) / self.max_arm_value
 
             lower_bound_p0 = self.get_hoeffding_lower_bound(len(rewards_0) / (len(rewards_0) + len(rewards_1)),
                                                             self.confidence, len(rewards_0) + len(rewards_1))
             lower_bound_p1 = self.get_hoeffding_lower_bound(len(rewards_1) / (len(rewards_0) + len(rewards_1)),
                                                             self.confidence, len(rewards_0) + len(rewards_1))
 
-            lower_bound_v0 = self.get_hoeffding_lower_bound(sum(best_rewards_0) / len(best_rewards_0),
+            lower_bound_v0 = self.get_hoeffding_lower_bound(np.mean(best_rewards_0),
                                                             self.confidence, len(best_rewards_0))
-            lower_bound_v1 = self.get_hoeffding_lower_bound(sum(best_rewards_1) / len(best_rewards_1),
+            lower_bound_v1 = self.get_hoeffding_lower_bound(np.mean(best_rewards_1),
                                                             self.confidence, len(best_rewards_1))
 
             context_value = lower_bound_p0 * lower_bound_v0 + lower_bound_p1 * lower_bound_v1
@@ -158,6 +176,11 @@ class ContextGenerator(object):
             return None
 
     def get_best_rewards_by_training_bandit(self, selected_features: List[Tuple[int, int]]) -> List[float]:
+        """
+        # TODO: comments on context classes
+        :param selected_features:
+        :return:
+        """
         bandit: DiscreteBandit = self.bandit_class(**self.bandit_kwargs)
         rewards = self.get_rewards_per_selected_features(selected_features)
         pulled_arms = self.get_pulled_arms_per_selected_features(selected_features)
@@ -166,7 +189,7 @@ class ContextGenerator(object):
             reward = rewards[i]
             bandit.update(arm, reward)
         best_rewards = bandit.rewards_per_arm[bandit.get_optimal_arm()]
-        return best_rewards
+        return best_rewards.copy()
 
     def get_rewards_per_selected_features(self, selected_features: List[Tuple[int, int]]) -> List[float]:
         """
@@ -181,16 +204,21 @@ class ContextGenerator(object):
         rewards_per_selected_features = []
         for min_context in context:
             rewards_per_selected_features.extend(self.min_context_to_rewards_dict[min_context])
-        return rewards_per_selected_features
+        return rewards_per_selected_features.copy()
 
     def get_pulled_arms_per_selected_features(self, selected_features: List[Tuple[int, int]]) -> List[int]:
+        """
+
+        :param selected_features:
+        :return:
+        """
         context = self.generate_context_per_features(selected_features)
 
         # Generate the rewards for the selected features
         pulled_arms_per_selected_features = []
         for min_context in context:
             pulled_arms_per_selected_features.extend(self.min_context_to_pulled_arm_dict[min_context])
-        return pulled_arms_per_selected_features
+        return pulled_arms_per_selected_features.copy()
 
     def generate_context_per_features(self, selected_features: List[Tuple[int, int]]) -> List[Tuple[int, ...]]:
         """
@@ -210,14 +238,11 @@ class ContextGenerator(object):
             context_per_features.append(tuple(min_context))
             return context_per_features
 
-        for f in range(2 ** (self.n_features - len(selected_features))):
-            combination_str = format(f, "0" + str(self.n_features - len(selected_features)) + "b")
-            combination_values = list(map(int, combination_str))
-
+        for combination in list(itertools.product([0, 1], repeat=self.n_features-len(selected_features))):
             min_context = np.full(shape=self.n_features, fill_value=-1)
             for feature_idx, feature_value in selected_features:
                 min_context[feature_idx] = feature_value
-            min_context[min_context == -1] = combination_values
+            min_context[min_context == -1] = combination
 
             context_per_features.append(tuple(min_context))
         return context_per_features

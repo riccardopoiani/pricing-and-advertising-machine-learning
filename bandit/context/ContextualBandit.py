@@ -1,5 +1,7 @@
+import itertools
 from collections import defaultdict
 from typing import Dict, Tuple, List
+
 import numpy as np
 
 from bandit.context.ContextGenerator import ContextGenerator
@@ -30,25 +32,20 @@ class ContextualBandit(object):
         :param bandit_kwargs: the parameters of the bandit class
         """
         # data structure that maps min contexts into bandits
-        self.min_context_to_bandit_dict: Dict[Tuple[int], DiscreteBandit] = {}
+        self.min_context_to_bandit_dict: Dict[Tuple[int, ...], DiscreteBandit] = {}
         self.frequency_context_generation: int = context_generation_frequency
         self.confidence: float = confidence
         self.n_features: int = n_features
         self.bandit_class = bandit_class
         self.bandit_kwargs = bandit_kwargs
-        self.overall_bandit = bandit_class(**bandit_kwargs)
-        self.context_structure: List[List[Tuple[int]]] = [[]]  #
+        self.context_structure: List[List[Tuple[int, ...]]] = [[]]
+        self.context_structure_tree = None
 
+        overall_bandit = bandit_class(**bandit_kwargs)
         # Assign for each min-context the general bandit that uses aggregated information
-        for f in range(2 ** n_features):
-            # Map integers into binary but saved inside a tuple of int
-            full_context_str = format(f, "0" + str(n_features) + "b")
-            full_context = tuple(map(int, full_context_str))
-
-            self.min_context_to_bandit_dict[full_context] = self.overall_bandit
-
-            # populate the context structure
-            self.context_structure[0].append(full_context)
+        for min_context in list(itertools.product([0, 1], repeat=self.n_features)):
+            self.min_context_to_bandit_dict[min_context] = overall_bandit
+            self.context_structure[0].append(min_context)
 
         # Set data structures to contain all information about features seen, pulled arms and collected rewards
         # (it is not information of the single bandit, but an aggregated information)
@@ -61,7 +58,7 @@ class ContextualBandit(object):
     def get_context_structure(self):
         return self.context_structure
 
-    def pull_arm(self, min_context: Tuple[int]):
+    def pull_arm(self, min_context: Tuple[int, ...]):
         """
         For a user with given min-context, choose the corresponding bandit with the min-context and pull from it
 
@@ -70,10 +67,9 @@ class ContextualBandit(object):
         """
         for feature in min_context:
             assert feature in {0, 1}
-        self.min_context_to_index_dict[min_context].append(self.t)
         return self.min_context_to_bandit_dict[min_context].pull_arm()
 
-    def update(self, min_context: Tuple[int], pulled_arm: int, reward: float):
+    def update(self, min_context: Tuple[int, ...], pulled_arm: int, reward: float):
         """
         Update the contextual bandit by updating:
          - the time step
@@ -81,10 +77,11 @@ class ContextualBandit(object):
          - the ordered collected rewards
          - the bandit corresponding to the given min-context
 
-        :param min_context: the min-context of the previous pull_arm
+        :param min_context: the min-context related to the pulled_arm
         :param pulled_arm: the index of the pulled arm
         :param reward: the reward observed after pulling the arm
         """
+        self.min_context_to_index_dict[min_context].append(self.t)
         self.t += 1
         self.pulled_arm_list.append(pulled_arm)
         self.collected_rewards.append(reward)
@@ -101,15 +98,16 @@ class ContextualBandit(object):
         if self.day_t % self.frequency_context_generation == 0:
             rewards_per_feature: Dict[Tuple[int], List[float]] = {}
             pulled_arms_per_feature: Dict[Tuple[int], List[int]] = {}
-            for feature, indices in self.min_context_to_index_dict.items():
-                rewards_per_feature[feature] = list(np.array(self.collected_rewards)[indices])
-                pulled_arms_per_feature[feature] = list(np.array(self.pulled_arm_list)[indices])
+            for min_context, indices in self.min_context_to_index_dict.items():
+                rewards_per_feature[min_context] = list(np.array(self.collected_rewards.copy())[indices])
+                pulled_arms_per_feature[min_context] = list(np.array(self.pulled_arm_list.copy())[indices])
 
             context_generator = ContextGenerator(self.n_features, self.confidence, rewards_per_feature,
                                                  pulled_arms_per_feature, self.bandit_class, **self.bandit_kwargs)
-            root_node = context_generator.generate_context_structure_tree([f for f in range(self.n_features)], [])
-            context_structure = []
-            self.context_structure = context_generator.get_context_structure_from_tree(root_node, [], context_structure)
+            self.context_structure_tree = context_generator.continue_generation_context_structure_tree(
+                self.context_structure_tree, list(np.arange(self.n_features)), [])
+            self.context_structure = context_generator.get_context_structure_from_tree(self.context_structure_tree, [],
+                                                                                       [])
 
             # Generate bandits
             self.min_context_to_bandit_dict = {}
@@ -129,11 +127,13 @@ class ContextualBandit(object):
         :param context: the context corresponding to that bandit
         :return: the trained bandit
         """
-        pulled_arm_list = []
-        collected_rewards = []
+
+        indices = []
         for min_context in context:
-            pulled_arm_list.extend(np.array(self.pulled_arm_list)[self.min_context_to_index_dict[min_context]])
-            collected_rewards.extend(np.array(self.collected_rewards)[self.min_context_to_index_dict[min_context]])
+            indices.extend(self.min_context_to_index_dict[min_context])
+        indices = np.sort(indices)
+        pulled_arm_list = np.array(self.pulled_arm_list.copy())[indices]
+        collected_rewards = np.array(self.collected_rewards.copy())[indices]
 
         for i in range(len(pulled_arm_list)):
             bandit.update(pulled_arm_list[i], collected_rewards[i])

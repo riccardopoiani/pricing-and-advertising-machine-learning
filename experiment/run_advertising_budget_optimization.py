@@ -20,7 +20,6 @@ from advertising.data_structure.Campaign import Campaign
 from bandit.combinatiorial.CombinatorialStationaryBandit import CombinatorialStationaryBandit
 from bandit.combinatiorial.SWCombinatorialBandit import SWCombinatorialBandit
 from bandit.combinatiorial.CDCombinatorialBandit import CDCombinatorialBandit
-from environments.AdvertisingEnvironment import AdvertisingEnvironment
 from environments.Settings.EnvironmentManager import EnvironmentManager
 from utils.folder_management import handle_folder_creation
 
@@ -203,7 +202,7 @@ if args.save_result:
     # Plot cumulative regret and instantaneous reward
     rewards = np.mean(rewards, axis=0)
     scenario = EnvironmentManager.load_scenario(args.scenario_name)
-    env = AdvertisingEnvironment(scenario)
+    env = PricingAdvertisingJointEnvironment(scenario)
 
     os.chdir(folder_path_with_date)
 

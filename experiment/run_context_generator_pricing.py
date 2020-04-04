@@ -3,17 +3,17 @@ import os
 import pickle
 import sys
 from collections import defaultdict
-from typing import Tuple, List
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from joblib import Parallel, delayed
+
+from environments.GeneralEnvironment import PricingAdvertisingJointEnvironment
 
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
 from bandit.context.ContextualBandit import ContextualBandit
-from environments.PricingEnvironmentContextGeneration import PricingEnvironmentContextGeneration
 from bandit.discrete import DiscreteBandit
 from bandit.discrete.EXP3Bandit import EXP3Bandit
 from bandit.discrete.TSBanditRescaledBernoulli import TSBanditRescaledBernoulli
@@ -25,16 +25,16 @@ from environments.Settings.EnvironmentManager import EnvironmentManager
 from utils.folder_management import handle_folder_creation
 
 # Basic default settings
-N_DAYS = 7 * 10
-CONFIDENCE = 0.99
+N_DAYS = 7 * 14
+CONFIDENCE = 0.1
 CONTEXT_GENERATION_FREQUENCY = 7
 BASIC_OUTPUT_FOLDER = "../report/project_point_5/"
 
 # Pricing settings
 SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "resources"
-MIN_PRICE = 0
+MIN_PRICE = 15
 MAX_PRICE = 25
-N_ARMS = 10
+N_ARMS = 5
 DEFAULT_DISCRETIZATION = "UNIFORM"
 FIXED_BUDGET = 1000 / 3
 UNIT_COST = 12
@@ -95,12 +95,13 @@ def get_prices(args):
         raise NotImplemented("Not implemented discretization method")
 
 
-def get_bandit(args, arm_values: np.array, N_FEATURES: int = 2) -> DiscreteBandit:
+def get_bandit(args, arm_values: np.array, n_features: int = 2) -> DiscreteBandit:
     """
     Retrieve the bandit to be used in the experiment according to the bandit name
 
     :param args: command line arguments
     :param arm_values: values of each arm
+    :param n_features: number of user features
     :return: bandit that will be used to carry out the experiment
     """
     bandit_name = args.bandit_name
@@ -126,34 +127,38 @@ def get_bandit(args, arm_values: np.array, N_FEATURES: int = 2) -> DiscreteBandi
     else:
         raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
 
-    bandit = ContextualBandit(N_FEATURES, CONFIDENCE, CONTEXT_GENERATION_FREQUENCY, bandit_class, **bandit_kwargs)
+    bandit = ContextualBandit(n_features, CONFIDENCE, CONTEXT_GENERATION_FREQUENCY, bandit_class, **bandit_kwargs)
     return bandit
 
 
-def main(args):
+def main(args, id):
     scenario = EnvironmentManager.load_scenario(args.scenario_name)
-    env = PricingEnvironmentContextGeneration(scenario,
-                                              fixed_budget_allocation=[args.budget] * scenario.get_n_subcampaigns())
+    env = PricingAdvertisingJointEnvironment(scenario)
+    env.set_budget_allocation([args.budget] * scenario.get_n_subcampaigns())
 
     prices = get_prices(args=args)
     arm_profit = prices - args.unit_cost
     bandit = get_bandit(args=args, arm_values=prices)
 
+    env.next_day()
+
     for i in range(0, args.n_days):
         # User arrival
-        n_users = env.get_n_users()
-        for j in range(n_users):
+        daily_n_users = int(np.sum(env.get_daily_visits_per_sub_campaign()))
+        for j in range(daily_n_users):
             # A user is specified by a min context (that is when all the features are specified)
-            u: Tuple[int, ...] = env.get_user()
+            user_min_context, _ = env.next_user()
             # Choose arm
-            price_idx = bandit.pull_arm(u)
+            price_idx = bandit.pull_arm(user_min_context)
             # Observe reward
-            reward = env.round(price=prices[price_idx], min_context=u) * prices[price_idx]
+            reward, _ = env.round(price=prices[price_idx])
+            reward = reward * arm_profit[price_idx]
             # Update bandit
-            bandit.update(min_context=u, pulled_arm=price_idx, reward=reward)
+            bandit.update(min_context=user_min_context, pulled_arm=price_idx, reward=reward)
         bandit.next_day()
+        env.next_day()
         if i % 7 == 0:
-            print("SPLIT WEEK {}: {}".format(i, bandit.context_structure))
+            print("id: {}, day: {}, structure: {}".format(id, i, bandit.context_structure))
 
     return bandit.collected_rewards, env.get_day_breakpoints(), bandit.context_structure
 
@@ -170,7 +175,7 @@ def run(id, seed, args):
     # Eventually fix here the seeds for additional sources of randomness (e.g. tensorflow)
     np.random.seed(seed)
     print("Starting run {}".format(id))
-    rewards, day_breakpoints, context_structures = main(args=args)
+    rewards, day_breakpoints, context_structures = main(args=args, id=id)
     print("Done run {}".format(id))
     return rewards, day_breakpoints, context_structures
 
@@ -205,6 +210,8 @@ if args.save_result:
     fd.write("Number of arms: {}\n".format(args.n_arms))
     fd.write("Number of runs: {}\n".format(args.n_runs))
     fd.write("Horizon in days: {}\n".format(args.n_days))
+    fd.write("Confidence: {}\n".format(args.confidence))
+
     fd.write("Bandit algorithm: {}\n\n".format(args.bandit_name))
     fd.write("Scenario name {}\n".format(args.scenario_name))
 
@@ -230,26 +237,23 @@ if args.save_result:
 
     # Plot cumulative regret and instantaneous reward
     daily_rewards = np.zeros(shape=(args.n_runs, args.n_days), dtype=np.float)
-    for e in range(args.n_runs):
-        n_users = 0
-        for d, d_b in enumerate(day_breakpoint[e]):
-            daily_rewards[e, d] = sum(rewards[e][n_users:n_users + d_b])
-            n_users += d_b
+    for exp in range(args.n_runs):
+        for day in range(0, len(day_breakpoint[exp]-1)):
+            daily_rewards[exp, day] = np.sum(rewards[exp][day_breakpoint[exp][day]: day_breakpoint[exp][day+1]])
 
+    # Calculates optimal rewards (for clairvoyant algorithm)
     rewards = np.mean(daily_rewards, axis=0)
     scenario = EnvironmentManager.load_scenario(args.scenario_name)
-    env = PricingEnvironmentContextGeneration(scenario,
-                                              fixed_budget_allocation=[args.budget] * scenario.get_n_subcampaigns())
-    clicks_per_subcampaign = scenario.get_phases()[0].get_all_n_clicks(
-        budget_allocation=[args.budget] * scenario.get_n_subcampaigns())
+    env = PricingAdvertisingJointEnvironment(scenario)
+    clicks_per_subcampaign = scenario.get_phases()[0].get_all_n_clicks([args.budget] * scenario.get_n_subcampaigns())
     total_revenue_per_price = np.zeros(shape=(args.n_arms, scenario.get_n_subcampaigns()))
     for i, price in enumerate(get_prices(args)):
         crps = EnvironmentManager.get_crps_for_prices(args.scenario_name, [price] * scenario.get_n_subcampaigns())[0]
-        revenue = np.array(crps) * (price)
+        revenue = np.array(crps) * price
         total_revenue = np.array(clicks_per_subcampaign) * revenue
         total_revenue_per_price[i, :] = total_revenue
 
-    opt_reward = sum(np.max(total_revenue_per_price, axis=0))
+    opt_reward = np.sum(np.max(total_revenue_per_price, axis=0))
 
     avg_regrets = []
     for reward in rewards:

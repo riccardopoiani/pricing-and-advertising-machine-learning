@@ -3,6 +3,7 @@ import os
 import pickle
 import sys
 
+import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed
 
@@ -204,3 +205,19 @@ if args.save_result:
     fd.write("Gamma parameter (EXP3) {}\n".format(args.gamma))
 
     fd.close()
+
+    daily_rewards = np.zeros(shape=(args.n_runs, len(day_breakpoint[0]) + 1), dtype=np.float)
+    for i in range(args.n_runs):
+        for j in range(0, len(day_breakpoint[i]-1)):
+            daily_rewards[i, j] = np.sum(rewards[i][day_breakpoint[i][j]: day_breakpoint[i][j+1]])
+    final_rewards = np.mean(daily_rewards, axis=0)
+
+    os.chdir(folder_path_with_date)
+
+    plt.figure(0)
+    plt.plot(final_rewards, 'g')
+    plt.xlabel("t")
+    plt.ylabel("Instantaneous Reward")
+    plt.suptitle("Context Generation - REWARD")
+    plt.title(str(args.n_runs) + " Experiments - " + str(args.bandit_name))
+    plt.savefig(fname="Reward.png", format="png")
