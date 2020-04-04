@@ -63,6 +63,7 @@ class CampaignOptimizer(object):
             curr_row_budget = campaign.get_budgets()[max_idx_matrix[i, max_clicks_idx]]
             best_budgets.append(curr_row_budget)
             remaining_budget -= curr_row_budget
+            # TODO: fix bug due to the discretization of the arms: the total might not reach one
             max_clicks_idx = np.where(campaign.get_budgets() == remaining_budget)[0][0]
         best_budgets = best_budgets[::-1]
 

@@ -1,11 +1,17 @@
 from abc import ABC, abstractmethod
 from typing import List
 
+from advertising.data_structure.Campaign import Campaign
+
 
 class IJointBandit(ABC):
     """
     General class for enabling the joint optimization of the advertising and pricing strategy
     """
+
+    def __init__(self, campaign: Campaign):
+        self.collected_total_rewards: List[float] = []
+        self.daily_visit: List[List[int]] = [[] for _ in range(campaign.get_n_sub_campaigns())]
 
     @abstractmethod
     def pull_price(self, user_class: int) -> int:
@@ -47,3 +53,25 @@ class IJointBandit(ABC):
         :return: None
         """
         pass
+
+    @abstractmethod
+    def get_reward_per_sub_campaign(self) -> List[List[float]]:
+        """
+        :return: a list containing a list for each sub-campaign that contains
+        all the rewards observed by the pricing bandit for that sub-campaign
+        """
+        pass
+
+    def get_daily_number_of_visit_per_sub_campaign(self) -> List[List[int]]:
+        """
+        :return: a list containing a list for each sub-campaign. Each of this
+        list contain the number of visit generated due to that sub-campaign
+        """
+        return self.daily_visit
+
+    def get_daily_reward(self) -> List[float]:
+        """
+        :return: a list containing the daily reward of the joint optimization of
+        the pricing and the advertising strategies
+        """
+        return self.collected_total_rewards

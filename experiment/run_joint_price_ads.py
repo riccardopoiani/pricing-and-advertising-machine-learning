@@ -5,6 +5,7 @@ import sys
 from typing import List
 
 import numpy as np
+import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
 
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -39,7 +40,8 @@ BASIC_OUTPUT_FOLDER = "../report/project_point_4/"
 SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "resources"
 
 # Ads setting
-N_ARMS_ADS = 10
+N_ARMS_ADS = 11
+CUM_BUDGET = 10000
 
 # Ads bandit parameters
 ALPHA = 100
@@ -76,7 +78,10 @@ def get_arguments():
 
     # Ads settings
     parser.add_argument("-n_arms_ads", "--n_arms_ads", help="Number of arms to be used for advertising", type=int,
-                        default=N_ARMS_PRICE)
+                        default=N_ARMS_ADS)
+    parser.add_argument("-bud", "--cum_budget", default=CUM_BUDGET,
+                        help="Cumulative budget to be used for the simulation",
+                        type=float)
 
     # Scenario settings
     parser.add_argument("-scenario_name", "--scenario_name", default=SCENARIO_NAME,
@@ -115,7 +120,7 @@ def get_arguments():
 
 
 def get_prices(args):
-    return np.linspace(start=MIN_PRICE, stop=MAX_PRICE, num=args.n_arms)
+    return np.linspace(start=MIN_PRICE, stop=MAX_PRICE, num=args.n_arms_price)
 
 
 def get_ads_bandit(args, campaign: Campaign) -> CombinatorialBandit:
@@ -123,7 +128,7 @@ def get_ads_bandit(args, campaign: Campaign) -> CombinatorialBandit:
 
     if bandit_name == "GPBandit":
         model_list: List[DiscreteRegressor] = [
-            DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restarts_optimizer,
+            DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restart_opt,
                                 normalized=True)
             for _ in range(campaign.get_n_sub_campaigns())]
         bandit = CombinatorialStationaryBandit(campaign=campaign, model_list=model_list)
@@ -134,13 +139,13 @@ def get_ads_bandit(args, campaign: Campaign) -> CombinatorialBandit:
         bandit = CombinatorialStationaryBandit(campaign=campaign, model_list=model_list)
     elif bandit_name == "GPSWBandit":
         model_list: List[DiscreteRegressor] = [
-            DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restarts_optimizer,
+            DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restart_opt,
                                 normalized=True)
             for _ in range(campaign.get_n_sub_campaigns())]
         bandit = SWCombinatorialBandit(campaign=campaign, model_list=model_list, sw_size=args.sw_size)
     elif bandit_name == "CDBandit":
         model_list: List[DiscreteRegressor] = [
-            DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restarts_optimizer,
+            DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restart_opt,
                                 normalized=True)
             for _ in range(campaign.get_n_sub_campaigns())]
         bandit = CDCombinatorialBandit(campaign=campaign, model_list=model_list, n_arms=args.n_arms_ads,
@@ -191,7 +196,7 @@ def main(args):
     scenario = EnvironmentManager.load_scenario(args.scenario_name)
 
     # Retrieve bandit and basic information
-    campaign = Campaign(scenario.get_n_subcampaigns(), args.cum_budget, args.n_arms)
+    campaign = Campaign(scenario.get_n_subcampaigns(), args.cum_budget, args.n_arms_ads)
     prices = get_prices(args=args)
     arm_profit = prices - args.unit_cost
     bandit = get_bandit(args=args, arm_values=arm_profit, campaign=campaign)
@@ -199,17 +204,18 @@ def main(args):
     # Create environment
     env = PricingAdvertisingJointEnvironment(scenario=scenario)
 
-    for _ in range(0, args.n_days):
+    for t in range(0, args.n_days):
+        print("day {}".format(t))
         # Fix budget
         elapsed_day = False
 
         # Fix the price and simulate the day
-        budget_allocation_indexes = bandit.pull_budget()
-        curr_budget = [int(campaign.get_budgets()[i]) for i in budget_allocation_indexes]
+        curr_budget_idx = bandit.pull_budget()
+        curr_budget = [int(campaign.get_budgets()[i]) for i in curr_budget_idx]
         env.set_budget_allocation(budget_allocation=curr_budget)
         env.next_day()
 
-        while elapsed_day:
+        while not elapsed_day:
             # Retrieve user class
             user_class = env.next_user()[1]
 
@@ -217,17 +223,19 @@ def main(args):
             price_idx = bandit.pull_price(user_class=user_class)
 
             # Observe reward
-            reward, elapsed_day = env.round(price=prices[price_idx]) * arm_profit[price_idx]
+            reward, elapsed_day = env.round(price=prices[price_idx])
+            reward = reward * arm_profit[price_idx]
 
             # Update bandit
             bandit.update_price(pulled_arm=price_idx, user_class=user_class, observed_reward=reward)
 
         # The day is over, update the budgeting model
-        bandit.update_budget(pulled_arm_list=curr_budget, n_visits=env.get_daily_visits_per_sub_campaign())
+        bandit.update_budget(pulled_arm_list=curr_budget_idx, n_visits=env.get_daily_visits_per_sub_campaign())
 
-    pricer_rewards = [pricer.collected_rewards for pricer in bandit.price_learner]
-    ads_rewards = bandit.ads_learner.collected_rewards_sub_campaign
-    return bandit.collected_total_rewards, pricer_rewards, ads_rewards, env.day_breakpoints
+    return bandit.get_daily_reward(), \
+           bandit.get_reward_per_sub_campaign(), \
+           bandit.get_daily_number_of_visit_per_sub_campaign(),\
+           env.day_breakpoints
 
 
 def run(id, seed, args):
@@ -244,7 +252,7 @@ def run(id, seed, args):
     print("Starting run {}".format(id))
     total_rewards, price_rewards, ads_rewards, day_breakpoint = main(args=args)
     print("Done run {}".format(id))
-    return price_rewards, ads_rewards, day_breakpoint
+    return total_rewards, price_rewards, ads_rewards, day_breakpoint
 
 
 # Scheduling runs: ENTRY POINT
@@ -274,7 +282,7 @@ if args.save_result:
         pickle.dump(price_rewards, output)
     with open("{}ads_reward_{}.pkl".format(folder_path_with_date, args.ads_bandit_name), "wb") as output:
         pickle.dump(ads_rewards, output)
-    with open("{}day_{}.pkl".format(folder_path_with_date, args.bandit_name), "wb") as output:
+    with open("{}day_{}.pkl".format(folder_path_with_date, args.joint_bandit_name), "wb") as output:
         pickle.dump(day_breakpoint, output)
     print("Done")
 
@@ -289,6 +297,7 @@ if args.save_result:
     fd.write("Bandit algorithm for pricing: {}\n".format(args.pricing_bandit_name))
     fd.write("Bandit algorithm for ads: {}\n".format(args.ads_bandit_name))
     fd.write("User prices: {}\n".format(get_prices(args=args)))
+    fd.write("Cumulative budget: {}\n\n".format(args.cum_budget))
 
     fd.write("Bandit parameters \n")
     fd.write("Gamma parameter (EXP3) {}\n".format(args.gamma))
@@ -298,3 +307,17 @@ if args.save_result:
     fd.write("Initial standard deviation GP: {}\n".format(args.init_std))
 
     fd.close()
+
+    # Plot instantaneous reward
+    rewards = np.mean(total_rewards, axis=0)
+    scenario = EnvironmentManager.load_scenario(args.scenario_name)
+    env = PricingAdvertisingJointEnvironment(scenario)
+
+    os.chdir(folder_path_with_date)
+
+    plt.plot(rewards, 'g')
+    plt.xlabel("t")
+    plt.ylabel("Instantaneous Reward")
+    plt.title(str(args.n_runs) + " Experiments")
+    plt.savefig(fname="Reward.png", format="png")
+

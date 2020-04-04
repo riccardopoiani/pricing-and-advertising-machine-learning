@@ -199,7 +199,7 @@ if args.save_result:
 
     fd.close()
 
-    # Plot cumulative regret and instantaneous reward
+    # Plot instantaneous reward
     rewards = np.mean(rewards, axis=0)
     scenario = EnvironmentManager.load_scenario(args.scenario_name)
     env = PricingAdvertisingJointEnvironment(scenario)
