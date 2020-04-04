@@ -66,8 +66,7 @@ class TSBanditRescaledBernoulli(DiscreteBandit):
         :param reward: observed reward of pulled_arm
         :return: none
         """
-        # self.arm_count[pulled_arm]+=1
-        # print(self.arm_count)
+        self.arm_count[pulled_arm] += 1
         if reward != 0:
             reward = 1
         self.beta_distribution[pulled_arm, 0] += reward

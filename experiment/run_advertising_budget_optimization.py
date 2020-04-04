@@ -35,7 +35,6 @@ N_RESTARTS_OPTIMIZERS = 10
 SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "resources"
 CUM_BUDGET = 10000
 N_ARMS = 11
-BEST_BUDGET_ALLOCATION = [3000, 2000, 5000]
 
 
 def get_arguments():
@@ -81,7 +80,7 @@ def get_arguments():
 
 
 def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e6, alpha: float = ALPHA,
-               n_restarts_optimizer: int = N_RESTARTS_OPTIMIZERS) -> CombinatorialStationaryBandit:
+               n_restarts_optimizer: int = N_RESTARTS_OPTIMIZERS) -> CDCombinatorialBandit:
     """
     Retrieve the bandit to be used in the experiment according to the bandit name
 
@@ -114,7 +113,7 @@ def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e6, 
             DiscreteGPRegressor(list(campaign.get_budgets()), init_std_dev, alpha, n_restarts_optimizer,
                                 normalized=True)
             for _ in range(campaign.get_n_sub_campaigns())]
-        bandit = CDCombinatorialBandit(campaign=campaign, model_list=model_list, n_arms=N_ARMS,
+        bandit = CDCombinatorialBandit(campaign=campaign, model_list=model_list, n_arms=args.n_arms,
                                        gamma=args.gamma, cd_threshold=args.cd_threshold, sw_size=args.sw_size)
     else:
         raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
@@ -202,25 +201,9 @@ if args.save_result:
     rewards = np.mean(rewards, axis=0)
     scenario = EnvironmentManager.load_scenario(args.scenario_name)
     env = AdvertisingEnvironment(scenario)
-    avg_regrets = []
-    for reward in rewards:
-        # The clairvoyant algorithm reward is the best reward he can get by sampling the environment
-        # from the best budget allocation
-        opt = sum(env.round(BEST_BUDGET_ALLOCATION))
-        avg_regrets.append(opt - reward)
-    cum_regrets = np.cumsum(avg_regrets)
 
     os.chdir(folder_path_with_date)
 
-    plt.figure(0)
-    plt.plot(cum_regrets, 'r')
-    plt.xlabel("t")
-    plt.ylabel("Cumulative Regret")
-    plt.suptitle("Budget Allocation - Combinatorial Bandit")
-    plt.title(str(args.n_runs) + " Experiments - " + str(args.bandit_name))
-    plt.savefig(fname="Regret.png", format="png")
-
-    plt.figure(1)
     plt.plot(rewards, 'g')
     plt.xlabel("t")
     plt.ylabel("Instantaneous Reward")

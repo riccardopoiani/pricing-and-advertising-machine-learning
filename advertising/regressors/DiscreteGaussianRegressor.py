@@ -12,7 +12,7 @@ class DiscreteGaussianRegressor(DiscreteRegressor):
         super().__init__(arms, init_std_dev)
 
     def fit_model(self, collected_rewards: np.array, pulled_arm_history: np.array):
-        if collected_rewards.size == 0 or pulled_arm_history.size == 0:
+        if len(collected_rewards) == 0 or len(pulled_arm_history) == 0:
             self.reset_parameters()
         else:
             for arm in range(len(self.arms)):

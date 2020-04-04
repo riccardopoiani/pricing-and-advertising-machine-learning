@@ -1,9 +1,6 @@
 from typing import List
 
-import numpy as np
-
 from advertising.data_structure.Campaign import Campaign
-from advertising.optimizers.CampaignOptimizer import CampaignOptimizer
 from advertising.regressors.DiscreteRegressor import DiscreteRegressor
 from bandit.combinatiorial.CombinatorialBandit import CombinatorialBandit
 
@@ -15,16 +12,6 @@ class CombinatorialStationaryBandit(CombinatorialBandit):
 
     def __init__(self, campaign: Campaign, model_list: List[DiscreteRegressor]):
         super().__init__(campaign=campaign, model_list=model_list)
-
-    def pull_arm(self) -> List[int]:
-        """
-        Find the best allocation of budgets by optimizing the combinatorial problem of the campaign and then return
-        the indices of the best budgets
-
-        :return: the indices of the best budgets given the actual campaign
-        """
-        max_clicks, best_budgets = CampaignOptimizer.find_best_budgets(self.campaign)
-        return [np.where(self.campaign.get_budgets() == budget)[0][0] for budget in best_budgets]
 
     def update_observations(self, pulled_arm: List[int], reward: List[float]) -> None:
         """

@@ -40,7 +40,7 @@ class ContextualBandit(object):
         self.context_structure: List[List[Tuple[int]]] = [[]]  #
 
         # Assign for each min-context the general bandit that uses aggregated information
-        for f in range(2**n_features):
+        for f in range(2 ** n_features):
             # Map integers into binary but saved inside a tuple of int
             full_context_str = format(f, "0" + str(n_features) + "b")
             full_context = tuple(map(int, full_context_str))

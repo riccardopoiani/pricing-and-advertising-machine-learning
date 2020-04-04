@@ -13,6 +13,7 @@ class UCB1Bandit(DiscreteBandit):
         self.expected_rewards: np.array = np.zeros(n_arms)
         self.upper_bound: np.array = np.ones(n_arms)
         self.max_value: float = np.max(arm_values)
+        self.arm_values = arm_values
 
     def pull_arm(self) -> int:
         """

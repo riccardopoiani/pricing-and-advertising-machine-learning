@@ -25,14 +25,14 @@ from environments.Settings.EnvironmentManager import EnvironmentManager
 from utils.folder_management import handle_folder_creation
 
 # Basic default settings
-N_DAYS = 7 * 14
-CONFIDENCE = 0.95
+N_DAYS = 7 * 10
+CONFIDENCE = 0.99
 CONTEXT_GENERATION_FREQUENCY = 7
 BASIC_OUTPUT_FOLDER = "../report/project_point_5/"
 
 # Pricing settings
 SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "resources"
-MIN_PRICE = 15
+MIN_PRICE = 0
 MAX_PRICE = 25
 N_ARMS = 10
 DEFAULT_DISCRETIZATION = "UNIFORM"
@@ -152,8 +152,8 @@ def main(args):
             # Update bandit
             bandit.update(min_context=u, pulled_arm=price_idx, reward=reward)
         bandit.next_day()
-        if i%7 == 0:
-            print(bandit.context_structure)
+        if i % 7 == 0:
+            print("SPLIT WEEK {}: {}".format(i, bandit.context_structure))
 
     return bandit.collected_rewards, env.get_day_breakpoints(), bandit.context_structure
 

@@ -1,9 +1,6 @@
-import numpy as np
-
 from typing import List
 
 from advertising.data_structure import Campaign
-from advertising.optimizers.CampaignOptimizer import CampaignOptimizer
 from advertising.regressors.DiscreteRegressor import DiscreteRegressor
 from bandit.combinatiorial.CombinatorialBandit import CombinatorialBandit
 
@@ -18,18 +15,6 @@ class SWCombinatorialBandit(CombinatorialBandit):
                  sw_size):
         super().__init__(campaign=campaign, model_list=model_list)
         self.sw_size = sw_size
-
-    def pull_arm(self) -> List[int]:
-        """
-        Find the best allocation of budgets by optimizing the combinatorial problem of the campaign and then return
-        the indices of the best budgets.
-        The combinatorial problem is optimized given estimates provided only by the last data (amount specified
-        by the sliding window)
-
-        :return: the indices of the best budgets given the actual campaign
-        """
-        max_clicks, best_budgets = CampaignOptimizer.find_best_budgets(self.campaign)
-        return [np.where(self.campaign.get_budgets() == budget)[0][0] for budget in best_budgets]
 
     def update_observations(self, pulled_arm: List[int], reward: List[float]) -> None:
         """
