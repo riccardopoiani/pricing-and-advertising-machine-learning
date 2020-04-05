@@ -1,5 +1,4 @@
-import numpy as np
-
+from abc import ABC
 from typing import List
 
 from advertising.data_structure.Campaign import Campaign
@@ -8,7 +7,12 @@ from bandit.discrete.DiscreteBandit import DiscreteBandit
 from bandit.joint.IJointBandit import IJointBandit
 
 
-class JointBandit(IJointBandit):
+class JointBanditWrapper(IJointBandit, ABC):
+    """
+    General class for the problem of jointly optimizing the pricing and the advertising strategy,
+    based on wrapping a combinatorial bandit for advertising and multiple bandits for learning
+    the price for each sub-campaign.
+    """
 
     def __init__(self, ads_learner: CombinatorialBandit,
                  price_learner: List[DiscreteBandit],
@@ -32,15 +36,7 @@ class JointBandit(IJointBandit):
     def update_price(self, user_class, pulled_arm, observed_reward) -> None:
         self.price_learner[user_class].update(pulled_arm, observed_reward)
 
-    def update_budget(self, pulled_arm_list: List[int], n_visits: List[float]):
-        expected_rewards = [np.array(learner.collected_rewards).mean() if len(learner.collected_rewards) > 0
-                            else 0 for learner in self.price_learner]
-        observed_rewards = np.array(n_visits) * np.array(expected_rewards)
-        self.collected_total_rewards.append(observed_rewards.sum())
-        self.ads_learner.update(pulled_arm=pulled_arm_list, observed_reward=observed_rewards)
-
     # Getter
 
     def get_reward_per_sub_campaign(self) -> List[List[float]]:
         return [learner.collected_rewards for learner in self.price_learner]
-

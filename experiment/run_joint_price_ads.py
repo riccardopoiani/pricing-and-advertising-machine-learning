@@ -4,13 +4,15 @@ import pickle
 import sys
 from typing import List
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from joblib import Parallel, delayed
 
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
+
+from bandit.joint.JointBanditQuantile import JointBanditQuantile
 from advertising.data_structure.Campaign import Campaign
 from advertising.regressors.DiscreteGPRegressor import DiscreteGPRegressor
 from advertising.regressors.DiscreteGaussianRegressor import DiscreteGaussianRegressor
@@ -19,7 +21,7 @@ from bandit.combinatiorial.CDCombinatorialBandit import CDCombinatorialBandit
 from bandit.combinatiorial.CombinatorialBandit import CombinatorialBandit
 from bandit.combinatiorial.CombinatorialStationaryBandit import CombinatorialStationaryBandit
 from bandit.combinatiorial.SWCombinatorialBandit import SWCombinatorialBandit
-from bandit.joint.JointBandit import JointBandit
+from bandit.joint.JointBanditExpectedReward import JointBanditExpectedReward
 from environments.GeneralEnvironment import PricingAdvertisingJointEnvironment
 from bandit.discrete import DiscreteBandit
 from bandit.discrete.EXP3Bandit import EXP3Bandit
@@ -33,7 +35,7 @@ from utils.folder_management import handle_folder_creation
 from bandit.joint.IJointBandit import IJointBandit
 
 # Basic default settings
-N_DAYS = 100
+N_DAYS = 20
 BASIC_OUTPUT_FOLDER = "../report/project_point_4/"
 
 # Scenario
@@ -183,8 +185,10 @@ def get_bandit(args, arm_values: np.array, campaign: Campaign) -> IJointBandit:
     price_bandit_list = [get_price_bandit(args=args, arm_values=arm_values)
                          for _ in range(campaign.get_n_sub_campaigns())]
 
-    if bandit_name == "JB":
-        bandit = JointBandit(ads_learner=ads_bandit, price_learner=price_bandit_list, campaign=campaign)
+    if bandit_name == "JBExp":
+        bandit = JointBanditExpectedReward(ads_learner=ads_bandit, price_learner=price_bandit_list, campaign=campaign)
+    elif bandit_name == 'JBQ':
+        bandit = JointBanditQuantile(ads_learner=ads_bandit, price_learner=price_bandit_list, campaign=campaign)
     else:
         raise argparse.ArgumentParser("The name of the bandit to be used is not in the available ones")
 
@@ -204,8 +208,7 @@ def main(args):
     # Create environment
     env = PricingAdvertisingJointEnvironment(scenario=scenario)
 
-    for t in range(0, args.n_days):
-        print("day {}".format(t))
+    for _ in range(0, args.n_days):
         # Fix budget
         elapsed_day = False
 
