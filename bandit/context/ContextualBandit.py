@@ -104,10 +104,8 @@ class ContextualBandit(object):
 
             context_generator = ContextGenerator(self.n_features, self.confidence, rewards_per_feature,
                                                  pulled_arms_per_feature, self.bandit_class, **self.bandit_kwargs)
-            self.context_structure_tree = context_generator.continue_generation_context_structure_tree(
-                self.context_structure_tree, list(np.arange(self.n_features)), [])
-            self.context_structure = context_generator.get_context_structure_from_tree(self.context_structure_tree, [],
-                                                                                       [])
+            self.context_structure_tree = context_generator.update_context_structure_tree(self.context_structure_tree)
+            self.context_structure = context_generator.get_context_structure_from_tree(self.context_structure_tree)
 
             # Generate bandits
             self.min_context_to_bandit_dict = {}
