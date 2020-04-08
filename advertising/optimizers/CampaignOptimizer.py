@@ -44,6 +44,9 @@ class CampaignOptimizer(object):
 
     @classmethod
     def find_best_budgets(cls, campaign) -> (float, List[float]):
+        # TODO: refactor comments since they are only number of visit wise, while they optimize a campaign in general.
+        #       Thus, depending on the data, you may optain the maximum profit, instead of the number of visit.
+        #       They depend on the application context
         """
         Find, for the campaign, the best allocation of budgets for each sub-campaign by using the DP algorithm and by
         exploiting the max_idx_matrix 'recursively'

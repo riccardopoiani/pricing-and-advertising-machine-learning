@@ -6,10 +6,10 @@ from typing import List
 from advertising.data_structure.Campaign import Campaign
 from bandit.combinatiorial.CombinatorialBandit import CombinatorialBandit
 from bandit.discrete.DiscreteBandit import DiscreteBandit
-from bandit.joint.JointBanditWrapper import JointBanditWrapper
+from bandit.joint.IJointBandit import IJointBandit
 
 
-class JointBanditQuantile(JointBanditWrapper):
+class JointBanditQuantile(IJointBandit):
     """
     Quantile-based exploration for the estimated values of each sub-campaign,
     as reported in "A combinatorial-bandit algorithm for the Online joint bid/budget optimization
@@ -19,10 +19,25 @@ class JointBanditQuantile(JointBanditWrapper):
     def __init__(self, ads_learner: CombinatorialBandit,
                  price_learner: List[DiscreteBandit],
                  campaign: Campaign):
-        super().__init__(ads_learner=ads_learner,
-                         price_learner=price_learner,
-                         campaign=campaign)
+        assert len(price_learner) == campaign.get_n_sub_campaigns()
+
+        super().__init__(campaign=campaign)
+        self.ads_learner: CombinatorialBandit = ads_learner
+        self.price_learner: List[DiscreteBandit] = price_learner
         self.day_t = 1
+
+    # Pull methods
+
+    def pull_price(self, user_class: int) -> int:
+        return self.price_learner[user_class].pull_arm()
+
+    def pull_budget(self) -> List[int]:
+        return self.ads_learner.pull_arm()
+
+    # Update methods
+
+    def update_price(self, user_class, pulled_arm, observed_reward) -> None:
+        self.price_learner[user_class].update(pulled_arm, observed_reward)
 
     def update_budget(self, pulled_arm_list: List[int], n_visits: List[float]):
         self.day_t += 1

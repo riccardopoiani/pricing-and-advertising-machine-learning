@@ -10,6 +10,7 @@ class IJointBandit(ABC):
     """
 
     def __init__(self, campaign: Campaign):
+        self.campaign = campaign
         self.collected_total_rewards: List[float] = []
         self.daily_visit: List[List[int]] = [[] for _ in range(campaign.get_n_sub_campaigns())]
 
@@ -51,14 +52,6 @@ class IJointBandit(ABC):
         :param pulled_arm_list: used budget for each sub-campaign
         :param n_visits: number of visit generated for each sub-campaign
         :return: None
-        """
-        pass
-
-    @abstractmethod
-    def get_reward_per_sub_campaign(self) -> List[List[float]]:
-        """
-        :return: a list containing a list for each sub-campaign that contains
-        all the rewards observed by the pricing bandit for that sub-campaign
         """
         pass
 

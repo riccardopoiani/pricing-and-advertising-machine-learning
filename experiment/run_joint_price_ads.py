@@ -225,8 +225,6 @@ def learn_per_user(bandit, env, campaign, prices, arm_profit):
         # The day is over, update the budgeting model
         bandit.update_budget(pulled_arm_list=curr_budget_idx, n_visits=env.get_daily_visits_per_sub_campaign())
 
-    return 0
-
 
 def learn_per_day(bandit, env, campaign, prices, arm_profit, n_subcampaigns):
     explored_classes = np.zeros(n_subcampaigns)
@@ -264,8 +262,6 @@ def learn_per_day(bandit, env, campaign, prices, arm_profit, n_subcampaigns):
         bandit.update_budget(pulled_arm_list=curr_budget_idx, n_visits=env.get_daily_visits_per_sub_campaign())
         explored_classes[:] = 0
 
-    return 0
-
 
 def main(args):
     # Retrieve scenario
@@ -287,8 +283,6 @@ def main(args):
         learn_per_user(bandit, env, campaign, prices, arm_profit)
 
     return bandit.get_daily_reward(), \
-           bandit.get_reward_per_sub_campaign(), \
-           bandit.get_daily_number_of_visit_per_sub_campaign(),\
            env.day_breakpoints
 
 
@@ -304,9 +298,9 @@ def run(id, seed, args):
     # Eventually fix here the seeds for additional sources of randomness (e.g. tensorflow)
     np.random.seed(seed)
     print("Starting run {}".format(id))
-    total_rewards, price_rewards, ads_rewards, day_breakpoint = main(args=args)
+    total_rewards, day_breakpoint = main(args=args)
     print("Done run {}".format(id))
-    return total_rewards, price_rewards, ads_rewards, day_breakpoint
+    return total_rewards, day_breakpoint
 
 
 # Scheduling runs: ENTRY POINT
@@ -320,9 +314,7 @@ else:
         delayed(run)(id=id, seed=seed, args=args) for id, seed in zip(range(args.n_runs), seeds))
 
 total_rewards = [res[0] for res in results]
-price_rewards = [res[1] for res in results]
-ads_rewards = [res[2] for res in results]
-day_breakpoint = [res[3] for res in results]
+day_breakpoint = [res[1] for res in results]
 
 if args.save_result:
     # Set up writing folder and file
@@ -332,10 +324,6 @@ if args.save_result:
     print("Storing results on file...", end="")
     with open("{}total_reward_{}.pkl".format(folder_path_with_date, args.joint_bandit_name), "wb") as output:
         pickle.dump(total_rewards, output)
-    with open("{}price_reward_{}.pkl".format(folder_path_with_date, args.pricing_bandit_name), "wb") as output:
-        pickle.dump(price_rewards, output)
-    with open("{}ads_reward_{}.pkl".format(folder_path_with_date, args.ads_bandit_name), "wb") as output:
-        pickle.dump(ads_rewards, output)
     with open("{}day_{}.pkl".format(folder_path_with_date, args.joint_bandit_name), "wb") as output:
         pickle.dump(day_breakpoint, output)
     print("Done")
