@@ -93,6 +93,8 @@ def get_arguments():
     parser.add_argument("-n_runs", "--n_runs", default=1, help="Number of runs of the experiments", type=int)
     parser.add_argument("-n_jobs", "--n_jobs", default=1, help="Number of jobs to be run", type=int)
     parser.add_argument("-t", "--n_days", default=N_DAYS, help="Number of rounds", type=int)
+    parser.add_argument("-daily_price", "--daily_price", default=0, help="Pull a daily price or a price for each user",
+                        type=int)
 
     # Ads bandit hyper-parameters
     parser.add_argument("-ab", "--ads_bandit_name", help="Name of the bandit to be used for advertising", type=str)
@@ -195,19 +197,7 @@ def get_bandit(args, arm_values: np.array, campaign: Campaign) -> IJointBandit:
     return bandit
 
 
-def main(args):
-    # Retrieve scenario
-    scenario = EnvironmentManager.load_scenario(args.scenario_name)
-
-    # Retrieve bandit and basic information
-    campaign = Campaign(scenario.get_n_subcampaigns(), args.cum_budget, args.n_arms_ads)
-    prices = get_prices(args=args)
-    arm_profit = prices - args.unit_cost
-    bandit = get_bandit(args=args, arm_values=arm_profit, campaign=campaign)
-
-    # Create environment
-    env = PricingAdvertisingJointEnvironment(scenario=scenario)
-
+def learn_per_user(bandit, env, campaign, prices, arm_profit):
     for _ in range(0, args.n_days):
         # Fix budget
         elapsed_day = False
@@ -234,6 +224,67 @@ def main(args):
 
         # The day is over, update the budgeting model
         bandit.update_budget(pulled_arm_list=curr_budget_idx, n_visits=env.get_daily_visits_per_sub_campaign())
+
+    return 0
+
+
+def learn_per_day(bandit, env, campaign, prices, arm_profit, n_subcampaigns):
+    explored_classes = np.zeros(n_subcampaigns)
+    daily_price_idx = np.zeros(n_subcampaigns)
+
+    for _ in range(0, args.n_days):
+        # Fix budget
+        elapsed_day = False
+
+        # Fix the price and simulate the day
+        curr_budget_idx = bandit.pull_budget()
+        curr_budget = [int(campaign.get_budgets()[i]) for i in curr_budget_idx]
+        env.set_budget_allocation(budget_allocation=curr_budget)
+        env.next_day()
+
+        while not elapsed_day:
+            # Retrieve user class
+            user_class = env.next_user()[1]
+
+            # Choose arm
+            if not explored_classes[user_class]:
+                daily_price_idx[user_class] = bandit.pull_price(user_class=user_class)
+                explored_classes[user_class] = 1
+
+            price_idx = int(daily_price_idx[user_class])
+
+            # Observe reward
+            reward, elapsed_day = env.round(price=prices[price_idx])
+            reward = reward * arm_profit[price_idx]
+
+            # Update bandit
+            bandit.update_price(pulled_arm=price_idx, user_class=user_class, observed_reward=reward)
+
+        # The day is over, update the budgeting model
+        bandit.update_budget(pulled_arm_list=curr_budget_idx, n_visits=env.get_daily_visits_per_sub_campaign())
+        explored_classes[:] = 0
+
+    return 0
+
+
+def main(args):
+    # Retrieve scenario
+    scenario = EnvironmentManager.load_scenario(args.scenario_name)
+
+    # Retrieve bandit and basic information
+    campaign = Campaign(scenario.get_n_subcampaigns(), args.cum_budget, args.n_arms_ads)
+    prices = get_prices(args=args)
+    arm_profit = prices - args.unit_cost
+    bandit = get_bandit(args=args, arm_values=arm_profit, campaign=campaign)
+
+    # Create environment
+    env = PricingAdvertisingJointEnvironment(scenario=scenario)
+
+    # choose whether to pull one arm a day for each class, or to pull one arm for each user
+    if args.daily_price:
+        learn_per_day(bandit, env, campaign, prices, arm_profit, scenario.get_n_subcampaigns())
+    else:
+        learn_per_user(bandit, env, campaign, prices, arm_profit)
 
     return bandit.get_daily_reward(), \
            bandit.get_reward_per_sub_campaign(), \

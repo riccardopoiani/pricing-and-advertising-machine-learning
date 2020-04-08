@@ -32,6 +32,9 @@ class JointBanditQuantile(JointBanditWrapper):
         std_rewards = [np.array(learner.collected_rewards).std() if len(learner.collected_rewards) > 0
                        else 1 for learner in self.price_learner]
 
+        std_rewards = np.array(std_rewards)
+        std_rewards = np.where(std_rewards < 1, 1, std_rewards)
+
         quantile_order = 1 - (1 / self.day_t)
 
         estimated_ad_value = [norm.ppf(q=quantile_order, loc=expected_rewards[i],
