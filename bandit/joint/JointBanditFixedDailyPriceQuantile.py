@@ -41,7 +41,7 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
         self.min_std = min_std
 
         # Current data structure
-        self.day_t = 2
+        self.day_t = 1
         self.current_pricing_arm_idx = 0
         self.current_budget_allocation = [0 for _ in range(campaign.get_n_sub_campaigns())]
         self.daily_total_reward = 0
@@ -53,7 +53,7 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
         # For all the sub-campaigns and profit-arms compute mean and std, and the quantile
         mean_ad_value = np.zeros(shape=(self.campaign.get_n_sub_campaigns(), self.n_arms_price))
         std_ad_value = np.zeros(shape=(self.campaign.get_n_sub_campaigns(), self.n_arms_price))
-        percentile = 1 - (1 / self.day_t)
+        percentile = 1 - (1 / (self.day_t + 1))
 
         for c in range(self.campaign.get_n_sub_campaigns()):
             for arm in range(self.n_arms_price):
