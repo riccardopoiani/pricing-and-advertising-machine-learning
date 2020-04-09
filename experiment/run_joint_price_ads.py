@@ -11,7 +11,7 @@ from joblib import Parallel, delayed
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
-
+from bandit.joint.JointBanditFixedDailyPriceQuantile import JointBanditFixedDailyPriceQuantile
 from bandit.joint.JointBanditQuantile import JointBanditQuantile
 from advertising.data_structure.Campaign import Campaign
 from advertising.regressors.DiscreteGPRegressor import DiscreteGPRegressor
@@ -35,15 +35,19 @@ from utils.folder_management import handle_folder_creation
 from bandit.joint.IJointBandit import IJointBandit
 
 # Basic default settings
-N_DAYS = 20
+N_DAYS = 50
 BASIC_OUTPUT_FOLDER = "../report/project_point_4/"
 
 # Scenario
 SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "resources"
 
+# Joint parameters
+MIN_STD_QUANTILE = 0.1
+
 # Ads setting
 N_ARMS_ADS = 11
 CUM_BUDGET = 10000
+DEFAULT_ADS_BANDIT = "GPBandit"
 
 # Ads bandit parameters
 ALPHA = 100
@@ -51,6 +55,7 @@ N_RESTARTS_OPTIMIZERS = 10
 INIT_STD: float = 1e6
 
 # Pricing settings
+DEFAULT_PRICE_BANDIT = "TS"
 MIN_PRICE = 15
 MAX_PRICE = 25
 N_ARMS_PRICE = 10
@@ -96,8 +101,15 @@ def get_arguments():
     parser.add_argument("-daily_price", "--daily_price", default=0, help="Pull a daily price or a price for each user",
                         type=int)
 
+    # Joint bandit hyper-parameters
+    parser.add_argument("-min_std_q", "--min_std_q", default=MIN_STD_QUANTILE, type=float, help="Minimum standard"
+                                                                                                "deviation"
+                                                                                                "for quantile"
+                                                                                                "calculation")
+
     # Ads bandit hyper-parameters
-    parser.add_argument("-ab", "--ads_bandit_name", help="Name of the bandit to be used for advertising", type=str)
+    parser.add_argument("-ab", "--ads_bandit_name", help="Name of the bandit to be used for advertising", type=str,
+                        default=DEFAULT_ADS_BANDIT)
     parser.add_argument("-alpha", "--alpha", help="Alpha parameter for gaussian processes", type=int,
                         default=ALPHA)
     parser.add_argument("-n_restart_opt", "--n_restart_opt", help="Number of restarts for gaussian processes", type=int,
@@ -106,7 +118,8 @@ def get_arguments():
                         type=float, default=INIT_STD)
 
     # Pricing bandit hyper-parameters
-    parser.add_argument("-pb", "--pricing_bandit_name", help="Name of the bandit to be used for pricing", type=str)
+    parser.add_argument("-pb", "--pricing_bandit_name", help="Name of the bandit to be used for pricing", type=str,
+                        default=DEFAULT_PRICE_BANDIT)
     parser.add_argument("-gamma", "--gamma",
                         help="Parameter for tuning the desire to pick an action uniformly at random",
                         type=float, default=GAMMA)
@@ -189,8 +202,19 @@ def get_bandit(args, arm_values: np.array, campaign: Campaign) -> IJointBandit:
 
     if bandit_name == "JBExp":
         bandit = JointBanditExpectedReward(ads_learner=ads_bandit, price_learner=price_bandit_list, campaign=campaign)
-    elif bandit_name == 'JBQ':
-        bandit = JointBanditQuantile(ads_learner=ads_bandit, price_learner=price_bandit_list, campaign=campaign)
+    elif bandit_name == "JBQ":
+        bandit = JointBanditQuantile(ads_learner=ads_bandit, price_learner=price_bandit_list, campaign=campaign,
+                                     min_std_quantile=args.min_std_q)
+    elif bandit_name == "JBFQ":
+        assert args.daily_price, "This joint bandit requires to run it in a daily manner"
+
+        model_list: List[DiscreteRegressor] = [
+            DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restart_opt,
+                                normalized=True) for _ in range(campaign.get_n_sub_campaigns())]
+        bandit = JointBanditFixedDailyPriceQuantile(campaign=campaign, number_of_visit_model_list=model_list,
+                                                    min_std=args.min_std_q, arm_profit=arm_values,
+                                                    n_arms_profit=len(arm_values))
+
     else:
         raise argparse.ArgumentParser("The name of the bandit to be used is not in the available ones")
 
@@ -232,13 +256,11 @@ def learn_per_day(bandit, env, campaign, prices, arm_profit, n_subcampaigns):
 
     for _ in range(0, args.n_days):
         # Fix budget
-        elapsed_day = False
-
         # Fix the price and simulate the day
         curr_budget_idx = bandit.pull_budget()
-        curr_budget = [int(campaign.get_budgets()[i]) for i in curr_budget_idx]
+        curr_budget = [int(campaign.get_budgets()[int(i)]) for i in curr_budget_idx]
         env.set_budget_allocation(budget_allocation=curr_budget)
-        env.next_day()
+        elapsed_day = not env.next_day()
 
         while not elapsed_day:
             # Retrieve user class
@@ -329,6 +351,7 @@ if args.save_result:
     print("Done")
 
     fd.write("Bandit experiment\n")
+    fd.write("Daily run mode: {}\n".format(args.daily_price))
     fd.write("Number of pricing arms: {}\n".format(args.n_arms_price))
     fd.write("Number of ads arm: {}\n".format(args.n_arms_ads))
     fd.write("Number of runs: {}\n".format(args.n_runs))
@@ -342,6 +365,7 @@ if args.save_result:
     fd.write("Cumulative budget: {}\n\n".format(args.cum_budget))
 
     fd.write("Bandit parameters \n")
+    fd.write("Min quantile standard deviation (For quantile bandits): {}\n".format(args.min_std_q))
     fd.write("Gamma parameter (EXP3) {}\n".format(args.gamma))
     fd.write("CRP upper bound {}\n".format(args.crp_upper_bound))
     fd.write("Alpha GP: {}\n".format(args.alpha))

@@ -41,7 +41,7 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
         self.min_std = min_std
 
         # Current data structure
-        self.day_t = 1
+        self.day_t = 2
         self.current_pricing_arm_idx = 0
         self.current_budget_allocation = [0 for _ in range(campaign.get_n_sub_campaigns())]
         self.daily_total_reward = 0
@@ -58,8 +58,8 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
         for c in range(self.campaign.get_n_sub_campaigns()):
             for arm in range(self.n_arms_price):
                 values = np.array(self.profit_arm_reward_list[c][arm])
-                mean_ad_value[c][arm] = values.mean()
-                std_ad_value[c][arm] = values.std()
+                mean_ad_value[c][arm] = values.mean() if len(values) > 0 else 0
+                std_ad_value[c][arm] = values.std() if len(values) > 0 else 1
 
         std_ad_value = np.where(std_ad_value < self.min_std, self.min_std, std_ad_value)
 
@@ -74,7 +74,7 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
         # Joint optimization of advertising and pricing
         best_arm_profit_idx = -1
         curr_max_profit = -1
-        curr_best_budget = [-1 for _ in range(self.campaign.get_n_sub_campaigns())]
+        curr_best_budget_idx = [-1 for _ in range(self.campaign.get_n_sub_campaigns())]
         for profit_arm_index in range(self.n_arms_price):
             # Set campaign
             for sub_campaign_idx in range(self.campaign.get_n_sub_campaigns()):
@@ -86,12 +86,12 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
             max_profit, best_budgets = CampaignOptimizer.find_best_budgets(self.campaign)
             if max_profit > curr_max_profit:
                 curr_max_profit = max_profit
-                curr_best_budget = best_budgets
+                curr_best_budget_idx = [np.where(self.campaign.get_budgets() == budget)[0][0] for budget in best_budgets]
                 best_arm_profit_idx = profit_arm_index
 
         self.current_pricing_arm_idx = best_arm_profit_idx
 
-        return curr_best_budget
+        return curr_best_budget_idx
 
     def update_price(self, user_class, pulled_arm, observed_reward) -> None:
         self.daily_total_reward += observed_reward

@@ -18,7 +18,8 @@ class JointBanditQuantile(IJointBandit):
 
     def __init__(self, ads_learner: CombinatorialBandit,
                  price_learner: List[DiscreteBandit],
-                 campaign: Campaign):
+                 campaign: Campaign,
+                 min_std_quantile):
         assert len(price_learner) == campaign.get_n_sub_campaigns()
 
         super().__init__(campaign=campaign)
@@ -26,6 +27,7 @@ class JointBanditQuantile(IJointBandit):
         self.price_learner: List[DiscreteBandit] = price_learner
         self.day_t = 1
         self.daily_profit = 0
+        self.min_std_quantile = min_std_quantile
 
     # Pull methods
 
@@ -53,7 +55,7 @@ class JointBanditQuantile(IJointBandit):
                        else 1 for learner in self.price_learner]
 
         std_rewards = np.array(std_rewards)
-        std_rewards = np.where(std_rewards < 1, 1, std_rewards)
+        std_rewards = np.where(std_rewards < self.min_std_quantile, self.min_std_quantile, std_rewards)
 
         quantile_order = 1 - (1 / self.day_t)
 
