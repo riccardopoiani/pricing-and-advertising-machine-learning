@@ -23,6 +23,7 @@ class JointBanditExpectedReward(IJointBandit):
         super().__init__(campaign=campaign)
         self.ads_learner: CombinatorialBandit = ads_learner
         self.price_learner: List[DiscreteBandit] = price_learner
+        self.daily_profit = 0
 
     # Pull methods
 
@@ -35,14 +36,14 @@ class JointBanditExpectedReward(IJointBandit):
     # Update methods
 
     def update_price(self, user_class, pulled_arm, observed_reward) -> None:
+        self.daily_profit += observed_reward
         self.price_learner[user_class].update(pulled_arm, observed_reward)
 
     def update_budget(self, pulled_arm_list: List[int], n_visits: List[float]):
+        self.collected_total_rewards.append(self.daily_profit)
+        self.daily_profit = 0
+
         expected_rewards = [np.array(learner.collected_rewards).mean() if len(learner.collected_rewards) > 0
                             else 0 for learner in self.price_learner]
         observed_rewards = np.array(n_visits) * np.array(expected_rewards)
         self.ads_learner.update(pulled_arm=pulled_arm_list, observed_reward=observed_rewards)
-
-        # Update the current reward obtained from the model
-        total_r = np.array([np.array(learner.collected_rewards).sum() for learner in self.price_learner]).sum()
-        self.collected_total_rewards.append(total_r - np.array(self.collected_total_rewards).sum())
