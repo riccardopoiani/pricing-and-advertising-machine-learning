@@ -17,13 +17,15 @@ class JointBanditExpectedReward(IJointBandit):
 
     def __init__(self, ads_learner: CombinatorialBandit,
                  price_learner: List[DiscreteBandit],
-                 campaign: Campaign):
+                 campaign: Campaign,
+                 arm_values: np.array):
         assert len(price_learner) == campaign.get_n_sub_campaigns()
 
         super().__init__(campaign=campaign)
         self.ads_learner: CombinatorialBandit = ads_learner
         self.price_learner: List[DiscreteBandit] = price_learner
         self.daily_profit = 0
+        self.max_expected_reward: float = arm_values.max()
 
     # Pull methods
 
@@ -44,6 +46,6 @@ class JointBanditExpectedReward(IJointBandit):
         self.daily_profit = 0
 
         expected_rewards = [np.array(learner.collected_rewards).mean() if len(learner.collected_rewards) > 0
-                            else 0 for learner in self.price_learner]
+                            else self.max_expected_reward for learner in self.price_learner]
         observed_rewards = np.array(n_visits) * np.array(expected_rewards)
         self.ads_learner.update(pulled_arm=pulled_arm_list, observed_reward=observed_rewards)

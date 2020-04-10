@@ -37,8 +37,8 @@ from utils.folder_management import handle_folder_creation
 from bandit.joint.IJointBandit import IJointBandit
 
 # Basic default settings
-N_DAYS = 50
-BASIC_OUTPUT_FOLDER = "../report/project_point_4/"
+N_DAYS = 200
+BASIC_OUTPUT_FOLDER = "../report/project_point_6_7/"
 
 # Scenario
 SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "resources"
@@ -48,7 +48,7 @@ MIN_STD_QUANTILE = 0.1
 
 # Ads setting
 N_ARMS_ADS = 11
-CUM_BUDGET = 10000
+CUM_BUDGET = 1000
 DEFAULT_ADS_BANDIT = "GPBandit"
 
 # Ads bandit parameters
@@ -203,22 +203,24 @@ def get_bandit(args, arm_values: np.array, campaign: Campaign) -> IJointBandit:
                          for _ in range(campaign.get_n_sub_campaigns())]
 
     if bandit_name == "JBExp":
-        bandit = JointBanditExpectedReward(ads_learner=ads_bandit, price_learner=price_bandit_list, campaign=campaign)
-    if bandit_name == "JBExpV":
+        bandit = JointBanditExpectedReward(ads_learner=ads_bandit, price_learner=price_bandit_list,
+                                           campaign=campaign, arm_values=arm_values)
+    elif bandit_name == "JBExpV":
         model_list: List[DiscreteRegressor] = [
             DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restart_opt,
                                 normalized=True) for _ in range(campaign.get_n_sub_campaigns())]
         bandit = JointBanditExpectedRewardVisits(price_learner=price_bandit_list, campaign=campaign,
-                                                 number_of_visit_model_list=model_list)
+                                                 arm_values=arm_values, number_of_visit_model_list=model_list)
     elif bandit_name == "JBQ":
         bandit = JointBanditQuantile(ads_learner=ads_bandit, price_learner=price_bandit_list, campaign=campaign,
-                                     min_std_quantile=args.min_std_q)
+                                     min_std_quantile=args.min_std_q, arm_values=arm_values)
     elif bandit_name == "JBQV":
         model_list: List[DiscreteRegressor] = [
             DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restart_opt,
                                 normalized=True) for _ in range(campaign.get_n_sub_campaigns())]
         bandit = JointBanditQuantileVisits(price_learner=price_bandit_list, campaign=campaign,
-                                           min_std_quantile=args.min_std_q, number_of_visit_model_list=model_list)
+                                           min_std_quantile=args.min_std_q, arm_values=arm_values,
+                                           number_of_visit_model_list=model_list)
     elif bandit_name == "JBFQ":
         assert args.daily_price, "This joint bandit requires to run it in a daily manner"
 
@@ -228,7 +230,6 @@ def get_bandit(args, arm_values: np.array, campaign: Campaign) -> IJointBandit:
         bandit = JointBanditFixedDailyPriceQuantile(campaign=campaign, number_of_visit_model_list=model_list,
                                                     min_std=args.min_std_q, arm_profit=arm_values,
                                                     n_arms_profit=len(arm_values))
-
     else:
         raise argparse.ArgumentParser("The name of the bandit to be used is not in the available ones")
 

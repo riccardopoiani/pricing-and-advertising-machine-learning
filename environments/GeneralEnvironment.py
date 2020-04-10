@@ -6,9 +6,6 @@ from environments.Environment import Environment
 from environments.Settings.Scenario import Scenario
 
 
-# TODO: fix when 0 budget is spent, we need to fix the number of visits to 0, while so far
-#       we sample from a distribution with 0 mean, potentially obtaining values greater than 0
-
 class PricingAdvertisingJointEnvironment(Environment):
     """
     Environment for jointly optimizing the pricing and the advertising strategy

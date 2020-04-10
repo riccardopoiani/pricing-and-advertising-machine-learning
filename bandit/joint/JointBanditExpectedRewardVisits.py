@@ -18,6 +18,7 @@ class JointBanditExpectedRewardVisits(IJointBandit):
 
     def __init__(self, price_learner: List[DiscreteBandit],
                  campaign: Campaign,
+                 arm_values: np.array,
                  number_of_visit_model_list: List[DiscreteRegressor]):
         assert len(number_of_visit_model_list) == campaign.get_n_sub_campaigns()
         assert len(price_learner) == campaign.get_n_sub_campaigns()
@@ -31,6 +32,7 @@ class JointBanditExpectedRewardVisits(IJointBandit):
 
         self.price_learner: List[DiscreteBandit] = price_learner
         self.daily_profit = 0
+        self.max_expected_reward: float = arm_values.max()
 
     # Pull methods
 
@@ -66,7 +68,7 @@ class JointBanditExpectedRewardVisits(IJointBandit):
             sub_campaign_values[sub_index] = self.number_of_visit_model_list[sub_index].sample_distribution()
 
         expected_rewards = [np.array(learner.collected_rewards).mean() if len(learner.collected_rewards) > 0
-                            else 0 for learner in self.price_learner]
+                            else self.max_expected_reward for learner in self.price_learner]
         observed_rewards = np.transpose(np.array(sub_campaign_values)) * np.array(expected_rewards)
 
         for sub_index, model in enumerate(self.number_of_visit_model_list):

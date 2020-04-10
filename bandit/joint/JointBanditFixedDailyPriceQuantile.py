@@ -42,14 +42,44 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
 
         # Current data structure
         self.day_t = 1
-        self.current_pricing_arm_idx = 0
+        self.current_pricing_arm_idx = np.random.randint(low=0, high=n_arms_profit, size=1)
+        self.curr_best_budget_idx: List[int] = [0 for _ in range(campaign.get_n_sub_campaigns())]
         self.current_budget_allocation = [0 for _ in range(campaign.get_n_sub_campaigns())]
         self.daily_total_reward = 0
+
+        # Initializing randomly budget values
+        for sub_index, model in enumerate(self.number_of_visit_model_list):
+            sub_campaign_values = self.number_of_visit_model_list[sub_index].sample_distribution()
+            self.campaign.set_sub_campaign(sub_index, sub_campaign_values)
+        _, best_budgets = CampaignOptimizer.find_best_budgets(self.campaign)
+        self.curr_best_budget_idx = [np.where(self.campaign.get_budgets() == budget)[0][0] for budget in
+                                     best_budgets]
 
     def pull_price(self, user_class: int) -> int:
         return self.current_pricing_arm_idx
 
     def pull_budget(self) -> List[int]:
+        return self.curr_best_budget_idx
+
+    def update_price(self, user_class, pulled_arm, observed_reward) -> None:
+        self.daily_total_reward += observed_reward
+        self.profit_arm_reward_list[user_class][pulled_arm].append(observed_reward)
+
+    def update_budget(self, pulled_arm_list: List[int], n_visits: List[float]):
+        self.day_t += 1
+        self.collected_total_rewards.append(self.daily_total_reward)
+        self.daily_total_reward = 0
+
+        # Update data structure
+        for i in range(self.campaign.get_n_sub_campaigns()):
+            self.pulled_arm_sub_campaign[i].append(pulled_arm_list[i])
+            self.collected_rewards_sub_campaign[i].append(n_visits[i])
+
+        # Update model with new information
+        for sub_index, model in enumerate(self.number_of_visit_model_list):
+            model.fit_model(collected_rewards=self.collected_rewards_sub_campaign[sub_index],
+                            pulled_arm_history=self.pulled_arm_sub_campaign[sub_index])
+
         # For all the sub-campaigns and profit-arms compute mean and std, and the quantile
         mean_ad_value = np.zeros(shape=(self.campaign.get_n_sub_campaigns(), self.n_arms_price))
         std_ad_value = np.zeros(shape=(self.campaign.get_n_sub_campaigns(), self.n_arms_price))
@@ -58,8 +88,8 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
         for c in range(self.campaign.get_n_sub_campaigns()):
             for arm in range(self.n_arms_price):
                 values = np.array(self.profit_arm_reward_list[c][arm])
-                mean_ad_value[c][arm] = values.mean() if len(values) > 0 else 0
-                std_ad_value[c][arm] = values.std() if len(values) > 0 else 1
+                mean_ad_value[c][arm] = values.mean() if len(values) > 0 else self.arm_profit[arm]
+                std_ad_value[c][arm] = values.std() if len(values) > 0 else self.min_std
 
         std_ad_value = np.where(std_ad_value < self.min_std, self.min_std, std_ad_value)
 
@@ -86,28 +116,10 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
             max_profit, best_budgets = CampaignOptimizer.find_best_budgets(self.campaign)
             if max_profit > curr_max_profit:
                 curr_max_profit = max_profit
-                curr_best_budget_idx = [np.where(self.campaign.get_budgets() == budget)[0][0] for budget in best_budgets]
+                curr_best_budget_idx = [np.where(self.campaign.get_budgets() == budget)[0][0] for budget in
+                                        best_budgets]
                 best_arm_profit_idx = profit_arm_index
 
         self.current_pricing_arm_idx = best_arm_profit_idx
 
-        return curr_best_budget_idx
-
-    def update_price(self, user_class, pulled_arm, observed_reward) -> None:
-        self.daily_total_reward += observed_reward
-        self.profit_arm_reward_list[user_class][pulled_arm].append(observed_reward)
-
-    def update_budget(self, pulled_arm_list: List[int], n_visits: List[float]):
-        self.day_t += 1
-        self.collected_total_rewards.append(self.daily_total_reward)
-        self.daily_total_reward = 0
-
-        # Update data structure
-        for i in range(self.campaign.get_n_sub_campaigns()):
-            self.pulled_arm_sub_campaign[i].append(pulled_arm_list[i])
-            self.collected_rewards_sub_campaign[i].append(n_visits[i])
-
-        # Update model with new information
-        for sub_index, model in enumerate(self.number_of_visit_model_list):
-            model.fit_model(collected_rewards=self.collected_rewards_sub_campaign[sub_index],
-                            pulled_arm_history=self.pulled_arm_sub_campaign[sub_index])
+        self.curr_best_budget_idx = curr_best_budget_idx
