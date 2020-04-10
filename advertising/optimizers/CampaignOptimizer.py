@@ -20,7 +20,7 @@ class CampaignOptimizer(object):
         :param campaign: the campaign to be optimized
         :return:
             - the optimization matrix (N+1) x M containing, for each pair (budget, set of sub-campaign), the maximum
-              number of clicks achievable
+              optimized value achievable (value might be, for instance, the number of clicks, or the profit)
             - the maximum indices (N+1) x M related to the optimization matrix containing, for each pair
               (budget, set of sub-campaign), the index of the best budget for the new added sub-campaign w.r.t. previous
               set of sub-campaign (i.e. row)
@@ -44,16 +44,14 @@ class CampaignOptimizer(object):
 
     @classmethod
     def find_best_budgets(cls, campaign) -> (float, List[float]):
-        # TODO: refactor comments since they are only number of visit wise, while they optimize a campaign in general.
-        #       Thus, depending on the data, you may optain the maximum profit, instead of the number of visit.
-        #       They depend on the application context
         """
         Find, for the campaign, the best allocation of budgets for each sub-campaign by using the DP algorithm and by
         exploiting the max_idx_matrix 'recursively'
 
         :param campaign: the campaign of which you want to find the best allocation of budgets
         :return:
-            - maximum number of clicks achievable with the best allocation of budgets
+            - maximum value achievable with the best allocation of budgets (meaning depend on the optimization problem).
+            It might be the number of visits or the profit, for instance
             - best allocation of budgets for each sub-campaign
         """
         optimization_matrix, max_idx_matrix = cls._optimize(campaign)

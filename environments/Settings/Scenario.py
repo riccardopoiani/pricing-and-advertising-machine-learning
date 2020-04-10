@@ -1,7 +1,5 @@
 from typing import List, Tuple, Dict
 
-import numpy as np
-
 from environments.Settings.Phase import Phase
 
 

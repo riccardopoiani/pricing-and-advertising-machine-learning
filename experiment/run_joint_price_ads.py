@@ -46,7 +46,7 @@ MIN_STD_QUANTILE = 0.1
 
 # Ads setting
 N_ARMS_ADS = 11
-CUM_BUDGET = 10000
+CUM_BUDGET = 1000
 DEFAULT_ADS_BANDIT = "GPBandit"
 
 # Ads bandit parameters

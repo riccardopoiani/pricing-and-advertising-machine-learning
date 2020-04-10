@@ -1,6 +1,7 @@
-from collections import defaultdict
+import json
+import os
 from typing import List, Dict, Tuple
-import os, json
+
 import numpy as np
 
 from environments.Settings.Phase import Phase
@@ -33,7 +34,7 @@ class EnvironmentManager(object):
                     upper_bound = np.inf
 
                 return lambda x: \
-                    max(int(np.random.normal(np.maximum(np.minimum(coefficient * x + bias, upper_bound), lower_bound),
+                    0 if x == 0 else max(int(np.random.normal(np.maximum(np.minimum(coefficient * x + bias, upper_bound), lower_bound),
                                              noise_std)), 0)  # function returns positive int numbers
 
             function_info = function_dict["info"]
@@ -72,8 +73,21 @@ class EnvironmentManager(object):
                                             function_info["min_price"],
                                             function_info["max_crp"]),
                 min_value=function_info["min_price"], max_value=function_info["max_price"])
+        elif function_dict["type"] == "tanh":
+            def tanh_generator_function(coefficient, x_offset, dilation, y_offset):
+                return lambda x: np.random.binomial(n=1, p=coefficient * np.tanh(x_offset - x/dilation) + y_offset)
+
+            function_info = function_dict["info"]
+            fun: IStochasticFunction = BoundedLambdaStochasticFunction(
+                f=tanh_generator_function(coefficient=function_info["coefficient"],
+                                          x_offset=function_info["x_offset"],
+                                          dilation=function_info["dilation"],
+                                          y_offset=function_info["y_offset"]),
+                min_value=function_info["min_price"], max_value=function_info["max_price"]
+            )
         else:
-            raise NotImplementedError("Type of function not available")
+            print("here")
+            raise NotImplementedError("Type of function not available: {}\n".format(function_dict["type"]))
         return fun
 
     @classmethod
