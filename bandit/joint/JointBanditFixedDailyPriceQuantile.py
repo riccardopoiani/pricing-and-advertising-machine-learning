@@ -88,8 +88,8 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
         for c in range(self.campaign.get_n_sub_campaigns()):
             for arm in range(self.n_arms_price):
                 values = np.array(self.profit_arm_reward_list[c][arm])
-                mean_ad_value[c][arm] = values.mean() if len(values) > 0 else 0
-                std_ad_value[c][arm] = values.std() if len(values) > 0 else 1
+                mean_ad_value[c][arm] = values.mean() if len(values) > 0 else self.arm_profit[arm]
+                std_ad_value[c][arm] = values.std() if len(values) > 0 else self.min_std
 
         std_ad_value = np.where(std_ad_value < self.min_std, self.min_std, std_ad_value)
 

@@ -35,8 +35,8 @@ from utils.folder_management import handle_folder_creation
 from bandit.joint.IJointBandit import IJointBandit
 
 # Basic default settings
-N_DAYS = 50
-BASIC_OUTPUT_FOLDER = "../report/project_point_4/"
+N_DAYS = 200
+BASIC_OUTPUT_FOLDER = "../report/project_point_6_7/"
 
 # Scenario
 SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "resources"
@@ -204,7 +204,7 @@ def get_bandit(args, arm_values: np.array, campaign: Campaign) -> IJointBandit:
         bandit = JointBanditExpectedReward(ads_learner=ads_bandit, price_learner=price_bandit_list, campaign=campaign)
     elif bandit_name == "JBQ":
         bandit = JointBanditQuantile(ads_learner=ads_bandit, price_learner=price_bandit_list, campaign=campaign,
-                                     min_std_quantile=args.min_std_q)
+                                     min_std_quantile=args.min_std_q, arm_values=arm_values)
     elif bandit_name == "JBFQ":
         assert args.daily_price, "This joint bandit requires to run it in a daily manner"
 

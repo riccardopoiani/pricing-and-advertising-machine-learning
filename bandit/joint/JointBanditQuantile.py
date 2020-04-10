@@ -19,7 +19,8 @@ class JointBanditQuantile(IJointBandit):
     def __init__(self, ads_learner: CombinatorialBandit,
                  price_learner: List[DiscreteBandit],
                  campaign: Campaign,
-                 min_std_quantile):
+                 min_std_quantile,
+                 arm_values: np.array):
         assert len(price_learner) == campaign.get_n_sub_campaigns()
 
         super().__init__(campaign=campaign)
@@ -28,6 +29,7 @@ class JointBanditQuantile(IJointBandit):
         self.day_t = 1
         self.daily_profit = 0
         self.min_std_quantile = min_std_quantile
+        self.max_expected_reward: float = arm_values.max()
 
     # Pull methods
 
@@ -50,9 +52,9 @@ class JointBanditQuantile(IJointBandit):
 
         # Compute the value of the ad
         expected_rewards = [np.array(learner.collected_rewards).mean() if len(learner.collected_rewards) > 0
-                            else 0 for learner in self.price_learner]
+                            else self.max_expected_reward for learner in self.price_learner]
         std_rewards = [np.array(learner.collected_rewards).std() if len(learner.collected_rewards) > 0
-                       else 1 for learner in self.price_learner]
+                       else self.min_std_quantile for learner in self.price_learner]
 
         std_rewards = np.array(std_rewards)
         std_rewards = np.where(std_rewards < self.min_std_quantile, self.min_std_quantile, std_rewards)
