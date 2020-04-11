@@ -4,4 +4,3 @@ matplotlib
 joblib
 pytest
 tensorflow
-sympy

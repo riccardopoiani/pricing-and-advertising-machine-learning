@@ -1,8 +1,5 @@
 from collections import defaultdict
 from typing import List, Dict
-from sympy.solvers.inequalities import solve_rational_inequalities
-from sympy import Poly, FiniteSet
-from sympy.abc import x
 
 import numpy as np
 
@@ -89,18 +86,9 @@ class JointBanditBalanced(IJointBandit):
             rewards_per_subcampaign = []
             for sub_idx in range(self.campaign.get_n_sub_campaigns()):
                 rewards_per_subcampaign.append(self.rewards_per_arm_per_user_class[sub_idx][arm_idx])
-            rewards_len = [len(rewards) for rewards in rewards_per_subcampaign]
+            rewards_len = np.array([len(rewards) for rewards in rewards_per_subcampaign])
 
-            inequalities = []
-            for i in range(len(user_probabilities)):
-                inequalities.append(((Poly(user_probabilities[i] * x - rewards_len[i]), Poly(1, x)), '<='))
-            solution = solve_rational_inequalities([inequalities])
-
-            if type(solution) is FiniteSet:
-                solution = np.max(int(solution[0]), 0)
-            else:
-                solution = np.max(int(solution.end), 0)
-
+            solution = np.min(rewards_len / user_probabilities)
             balanced_rewards_len = np.array(np.floor(solution * user_probabilities), dtype=int)
 
             for sub_idx in range(self.campaign.get_n_sub_campaigns()):
