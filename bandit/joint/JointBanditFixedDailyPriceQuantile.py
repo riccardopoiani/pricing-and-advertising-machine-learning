@@ -41,16 +41,14 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
         self.min_std = min_std
 
         # Current data structure
-        self.day_t = 1
         self.current_pricing_arm_idx = np.random.randint(low=0, high=n_arms_profit, size=1)
         self.curr_best_budget_idx: List[int] = [0 for _ in range(campaign.get_n_sub_campaigns())]
         self.current_budget_allocation = [0 for _ in range(campaign.get_n_sub_campaigns())]
-        self.daily_total_reward = 0
 
         # Initializing randomly budget values
         for sub_index, model in enumerate(self.number_of_visit_model_list):
             sub_campaign_values = self.number_of_visit_model_list[sub_index].sample_distribution()
-            self.campaign.set_sub_campaign(sub_index, sub_campaign_values)
+            self.campaign.set_sub_campaign_values(sub_index, sub_campaign_values)
         _, best_budgets = CampaignOptimizer.find_best_budgets(self.campaign)
         self.curr_best_budget_idx = [np.where(self.campaign.get_budgets() == budget)[0][0] for budget in
                                      best_budgets]
@@ -62,13 +60,12 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
         return self.curr_best_budget_idx
 
     def update_price(self, user_class, pulled_arm, observed_reward) -> None:
-        self.daily_total_reward += observed_reward
+        super(JointBanditFixedDailyPriceQuantile, self).update_price(user_class, pulled_arm, observed_reward)
+
         self.profit_arm_reward_list[user_class][pulled_arm].append(observed_reward)
 
     def update_budget(self, pulled_arm_list: List[int], n_visits: List[float]):
-        self.day_t += 1
-        self.collected_total_rewards.append(self.daily_total_reward)
-        self.daily_total_reward = 0
+        super(JointBanditFixedDailyPriceQuantile, self).update_budget(pulled_arm_list, n_visits)
 
         # Update data structure
         for i in range(self.campaign.get_n_sub_campaigns()):
@@ -110,7 +107,7 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
             for sub_campaign_idx in range(self.campaign.get_n_sub_campaigns()):
                 sub_campaign_visits = sample_visit[sub_campaign_idx]
                 sub_campaign_values = sub_campaign_visits * estimated_ad_value[sub_campaign_idx][profit_arm_index]
-                self.campaign.set_sub_campaign(sub_campaign_idx, sub_campaign_values)
+                self.campaign.set_sub_campaign_values(sub_campaign_idx, sub_campaign_values)
 
             # Campaign optimization
             max_profit, best_budgets = CampaignOptimizer.find_best_budgets(self.campaign)

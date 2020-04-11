@@ -11,29 +11,17 @@ from joblib import Parallel, delayed
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
+from bandit.joint.AdValueStrategy import QuantileAdValueStrategy, ExpectationAdValueStrategy
 from bandit.joint.JointBanditFixedDailyPriceQuantile import JointBanditFixedDailyPriceQuantile
-from bandit.joint.JointBanditQuantile import JointBanditQuantile
-from bandit.joint.JointBanditQuantileVisits import JointBanditQuantileVisits
+from bandit.joint.JointBanditDiscriminatory import JointBanditDiscriminatory
+from bandit.joint.JointBanditBalanced import JointBanditBalanced
 from advertising.data_structure.Campaign import Campaign
 from advertising.regressors.DiscreteGPRegressor import DiscreteGPRegressor
-from advertising.regressors.DiscreteGaussianRegressor import DiscreteGaussianRegressor
 from advertising.regressors.DiscreteRegressor import DiscreteRegressor
-from bandit.combinatiorial.CDCombinatorialBandit import CDCombinatorialBandit
-from bandit.combinatiorial.CombinatorialBandit import CombinatorialBandit
-from bandit.combinatiorial.CombinatorialStationaryBandit import CombinatorialStationaryBandit
-from bandit.combinatiorial.SWCombinatorialBandit import SWCombinatorialBandit
-from bandit.joint.JointBanditExpectedReward import JointBanditExpectedReward
-from bandit.joint.JointBanditExpectedRewardVisits import JointBanditExpectedRewardVisits
 from environments.GeneralEnvironment import PricingAdvertisingJointEnvironment
-from bandit.discrete import DiscreteBandit
-from bandit.discrete.EXP3Bandit import EXP3Bandit
-from bandit.discrete.TSBanditRescaledBernoulli import TSBanditRescaledBernoulli
-from bandit.discrete.UCB1MBandit import UCB1MBandit
-from bandit.discrete.UCBLBandit import UCBLBandit
-from bandit.discrete.UCBLM import UCBLMBandit
-from bandit.discrete.UCB1Bandit import UCB1Bandit
 from environments.Settings.EnvironmentManager import EnvironmentManager
 from utils.folder_management import handle_folder_creation
+from utils.experiments_helper import build_combinatorial_bandit, build_discrete_bandit, get_bandit_class_and_kwargs
 from bandit.joint.IJointBandit import IJointBandit
 
 # Basic default settings
@@ -116,7 +104,7 @@ def get_arguments():
                         default=ALPHA)
     parser.add_argument("-n_restart_opt", "--n_restart_opt", help="Number of restarts for gaussian processes", type=int,
                         default=N_RESTARTS_OPTIMIZERS)
-    parser.add_argument("-init_std", "--init_std", help="Initial standard deviation for gaussian processes",
+    parser.add_argument("-init_std", "--init_std", help="Initial standard deviation for regressors",
                         type=float, default=INIT_STD)
 
     # Pricing bandit hyper-parameters
@@ -142,85 +130,32 @@ def get_prices(args):
     return np.linspace(start=MIN_PRICE, stop=MAX_PRICE, num=args.n_arms_price)
 
 
-def get_ads_bandit(args, campaign: Campaign) -> CombinatorialBandit:
-    bandit_name = args.ads_bandit_name
-
-    if bandit_name == "GPBandit":
-        model_list: List[DiscreteRegressor] = [
-            DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restart_opt,
-                                normalized=True)
-            for _ in range(campaign.get_n_sub_campaigns())]
-        bandit = CombinatorialStationaryBandit(campaign=campaign, model_list=model_list)
-    elif bandit_name == "GaussianBandit":
-        model_list: List[DiscreteRegressor] = [DiscreteGaussianRegressor(list(campaign.get_budgets()),
-                                                                         args.init_std)
-                                               for _ in range(campaign.get_n_sub_campaigns())]
-        bandit = CombinatorialStationaryBandit(campaign=campaign, model_list=model_list)
-    elif bandit_name == "GPSWBandit":
-        model_list: List[DiscreteRegressor] = [
-            DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restart_opt,
-                                normalized=True)
-            for _ in range(campaign.get_n_sub_campaigns())]
-        bandit = SWCombinatorialBandit(campaign=campaign, model_list=model_list, sw_size=args.sw_size)
-    elif bandit_name == "CDBandit":
-        model_list: List[DiscreteRegressor] = [
-            DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restart_opt,
-                                normalized=True)
-            for _ in range(campaign.get_n_sub_campaigns())]
-        bandit = CDCombinatorialBandit(campaign=campaign, model_list=model_list, n_arms=args.n_arms_ads,
-                                       gamma=args.gamma, cd_threshold=args.cd_threshold, sw_size=args.sw_size)
-    else:
-        raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
-
-    return bandit
-
-
-def get_price_bandit(args, arm_values: np.array) -> DiscreteBandit:
-    bandit_name = args.pricing_bandit_name
-
-    if bandit_name == "TS":
-        bandit = TSBanditRescaledBernoulli(n_arms=args.n_arms_price, arm_values=arm_values)
-    elif bandit_name == "UCB1":
-        bandit = UCB1Bandit(n_arms=args.n_arms_price, arm_values=arm_values)
-    elif bandit_name == "UCB1M":
-        bandit = UCB1MBandit(n_arms=args.n_arms_price, arm_values=arm_values)
-    elif bandit_name == "UCBL":
-        bandit = UCBLBandit(n_arms=args.n_arms_price, crp_upper_bound=args.crp_upper_bound, arm_values=arm_values)
-    elif bandit_name == "UCBLM":
-        bandit = UCBLMBandit(n_arms=args.n_arms_price, crp_upper_bound=args.crp_upper_bound, arm_values=arm_values)
-    elif bandit_name == "EXP3":
-        bandit = EXP3Bandit(n_arms=args.n_arms_price, gamma=args.gamma, arm_values=arm_values)
-    else:
-        raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
-
-    return bandit
-
-
 def get_bandit(args, arm_values: np.array, campaign: Campaign) -> IJointBandit:
     bandit_name = args.joint_bandit_name
-    ads_bandit = get_ads_bandit(args=args, campaign=campaign)
-    price_bandit_list = [get_price_bandit(args=args, arm_values=arm_values)
+    ads_bandit = build_combinatorial_bandit(bandit_name=args.ads_bandit_name, campaign=campaign,
+                                            init_std=args.init_std, args=args)
+    price_bandit_class, price_bandit_kwargs = get_bandit_class_and_kwargs(bandit_name=args.pricing_bandit_name,
+                                                                          n_arms=len(arm_values),
+                                                                          arm_values=arm_values, args=args)
+    price_bandit_list = [price_bandit_class(**price_bandit_kwargs)
                          for _ in range(campaign.get_n_sub_campaigns())]
 
-    if bandit_name == "JBExp":
-        bandit = JointBanditExpectedReward(ads_learner=ads_bandit, price_learner=price_bandit_list,
-                                           campaign=campaign, arm_values=arm_values)
-    elif bandit_name == "JBExpV":
+    ad_value_strategy = ExpectationAdValueStrategy(np.max(arm_values)) \
+        if bandit_name in ["JBExpV", "JBExp", "JBBExp"] else QuantileAdValueStrategy(np.max(arm_values), args.min_std_q)
+    is_learn_visits = True if bandit_name in ["JBExpV", "JBQV"] else False
+
+    if bandit_name in ["JBExp", "JBExpV", "JBQV", "JBQ"]:
+        bandit = JointBanditDiscriminatory(ads_learner=ads_bandit, price_learner=price_bandit_list, campaign=campaign,
+                                           ad_value_strategy=ad_value_strategy, is_learn_visits=is_learn_visits)
+    elif bandit_name in ["JBBQ", "JBBExp"]:
+        assert ~args.daily_price, "This joint bandit requires to run it in a user-per-user manner"
+
         model_list: List[DiscreteRegressor] = [
             DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restart_opt,
                                 normalized=True) for _ in range(campaign.get_n_sub_campaigns())]
-        bandit = JointBanditExpectedRewardVisits(price_learner=price_bandit_list, campaign=campaign,
-                                                 arm_values=arm_values, number_of_visit_model_list=model_list)
-    elif bandit_name == "JBQ":
-        bandit = JointBanditQuantile(ads_learner=ads_bandit, price_learner=price_bandit_list, campaign=campaign,
-                                     min_std_quantile=args.min_std_q, arm_values=arm_values)
-    elif bandit_name == "JBQV":
-        model_list: List[DiscreteRegressor] = [
-            DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restart_opt,
-                                normalized=True) for _ in range(campaign.get_n_sub_campaigns())]
-        bandit = JointBanditQuantileVisits(price_learner=price_bandit_list, campaign=campaign,
-                                           min_std_quantile=args.min_std_q, arm_values=arm_values,
-                                           number_of_visit_model_list=model_list)
+        bandit = JointBanditBalanced(campaign=campaign, arm_values=arm_values, price_learner_class=price_bandit_class,
+                                     price_learner_kwargs=price_bandit_kwargs, number_of_visit_model_list=model_list,
+                                     ad_value_strategy=ad_value_strategy)
     elif bandit_name == "JBFQ":
         assert args.daily_price, "This joint bandit requires to run it in a daily manner"
 
@@ -319,8 +254,7 @@ def main(args):
     else:
         learn_per_user(bandit, env, campaign, prices, arm_profit)
 
-    return bandit.get_daily_reward(), \
-           env.day_breakpoints
+    return bandit.get_daily_reward(), env.day_breakpoints
 
 
 def run(id, seed, args):
@@ -401,4 +335,3 @@ if args.save_result:
     plt.ylabel("Instantaneous Reward")
     plt.title(str(args.n_runs) + " Experiments")
     plt.savefig(fname="Reward.png", format="png")
-

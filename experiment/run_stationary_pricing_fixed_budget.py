@@ -11,14 +11,8 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
 from environments.GeneralEnvironment import PricingAdvertisingJointEnvironment
-from bandit.discrete import DiscreteBandit
-from bandit.discrete.EXP3Bandit import EXP3Bandit
-from bandit.discrete.TSBanditRescaledBernoulli import TSBanditRescaledBernoulli
-from bandit.discrete.UCB1MBandit import UCB1MBandit
-from bandit.discrete.UCBLBandit import UCBLBandit
-from bandit.discrete.UCBLM import UCBLMBandit
-from bandit.discrete.UCB1Bandit import UCB1Bandit
 from environments.Settings.EnvironmentManager import EnvironmentManager
+from utils.experiments_helper import build_discrete_bandit
 from utils.folder_management import handle_folder_creation
 
 # Basic default settings
@@ -86,35 +80,6 @@ def get_prices(args):
     else:
         raise NotImplemented("Not implemented discretization method")
 
-
-def get_bandit(args, arm_values: np.array) -> DiscreteBandit:
-    """
-    Retrieve the bandit to be used in the experiment according to the bandit name
-
-    :param args: command line arguments
-    :param arm_values: values of each arm
-    :return: bandit that will be used to carry out the experiment
-    """
-    bandit_name = args.bandit_name
-
-    if bandit_name == "TS":
-        bandit = TSBanditRescaledBernoulli(n_arms=N_ARMS, arm_values=arm_values)
-    elif bandit_name == "UCB1":
-        bandit = UCB1Bandit(n_arms=N_ARMS, arm_values=arm_values)
-    elif bandit_name == "UCB1M":
-        bandit = UCB1MBandit(n_arms=N_ARMS, arm_values=arm_values)
-    elif bandit_name == "UCBL":
-        bandit = UCBLBandit(n_arms=N_ARMS, crp_upper_bound=args.crp_upper_bound, arm_values=arm_values)
-    elif bandit_name == "UCBLM":
-        bandit = UCBLMBandit(n_arms=N_ARMS, crp_upper_bound=args.crp_upper_bound, arm_values=arm_values)
-    elif bandit_name == "EXP3":
-        bandit = EXP3Bandit(n_arms=N_ARMS, gamma=args.gamma, arm_values=arm_values)
-    else:
-        raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
-
-    return bandit
-
-
 def main(args):
     scenario = EnvironmentManager.load_scenario(args.scenario_name)
     env = PricingAdvertisingJointEnvironment(scenario)
@@ -122,7 +87,8 @@ def main(args):
 
     prices = get_prices(args=args)
     arm_profit = prices - args.unit_cost
-    bandit = get_bandit(args=args, arm_values=arm_profit)
+    bandit = build_discrete_bandit(bandit_name=args.bandit_name, n_arms=len(arm_profit),
+                                                     arm_values=arm_profit, args=args)
 
     iterate = not env.next_day()
     while iterate:

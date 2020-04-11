@@ -75,7 +75,7 @@ class CDCombinatorialBandit(CombinatorialBandit):
 
             # Update estimations of the values of the sub-campaigns
             sub_campaign_values = self.model_list[i].sample_distribution()
-            self.campaign.set_sub_campaign(i, sub_campaign_values)
+            self.campaign.set_sub_campaign_values(i, sub_campaign_values)
 
     def _change_detection(self) -> np.array:
         """

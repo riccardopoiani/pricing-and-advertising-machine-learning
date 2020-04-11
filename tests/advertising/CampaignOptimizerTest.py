@@ -8,8 +8,8 @@ from advertising.optimizers.CampaignOptimizer import CampaignOptimizer
 class CampaignOptimizerTestCase(unittest.TestCase):
     def test_optimize_1(self):
         campaign = Campaign(2, 100, 3)
-        campaign.set_sub_campaign(0, [3, 7, 14])
-        campaign.set_sub_campaign(1, [2, 5, 7])
+        campaign.set_sub_campaign_values(0, [3, 7, 14])
+        campaign.set_sub_campaign_values(1, [2, 5, 7])
 
         opt_matrix, max_idx_matrix = CampaignOptimizer._optimize(campaign)
 
@@ -25,9 +25,9 @@ class CampaignOptimizerTestCase(unittest.TestCase):
 
     def test_optimize_2(self):
         campaign = Campaign(3, 90, 4)
-        campaign.set_sub_campaign(0, [0, 3, 12, 20])
-        campaign.set_sub_campaign(1, [0, 2, 7, 10])
-        campaign.set_sub_campaign(2, [0, 5, 8, 12])
+        campaign.set_sub_campaign_values(0, [0, 3, 12, 20])
+        campaign.set_sub_campaign_values(1, [0, 2, 7, 10])
+        campaign.set_sub_campaign_values(2, [0, 5, 8, 12])
 
         opt_matrix, max_idx_matrix = CampaignOptimizer._optimize(campaign)
 
@@ -45,10 +45,10 @@ class CampaignOptimizerTestCase(unittest.TestCase):
 
     def test_optimize_3(self):
         campaign = Campaign(4, 100, 5)
-        campaign.set_sub_campaign(0, [0, 3, 12, 20, 15])
-        campaign.set_sub_campaign(1, [0, 2, 7, 10, 9])
-        campaign.set_sub_campaign(2, [0, 5, 8, 12, 18])
-        campaign.set_sub_campaign(3, [0, 9, 9, 10, 7])
+        campaign.set_sub_campaign_values(0, [0, 3, 12, 20, 15])
+        campaign.set_sub_campaign_values(1, [0, 2, 7, 10, 9])
+        campaign.set_sub_campaign_values(2, [0, 5, 8, 12, 18])
+        campaign.set_sub_campaign_values(3, [0, 9, 9, 10, 7])
 
         opt_matrix, max_idx_matrix = CampaignOptimizer._optimize(campaign)
 
@@ -68,8 +68,8 @@ class CampaignOptimizerTestCase(unittest.TestCase):
 
     def test_find_best_budgets_1(self):
         campaign = Campaign(2, 100, 3)
-        campaign.set_sub_campaign(0, [3, 7, 14])
-        campaign.set_sub_campaign(1, [2, 5, 7])
+        campaign.set_sub_campaign_values(0, [3, 7, 14])
+        campaign.set_sub_campaign_values(1, [2, 5, 7])
 
         max_clicks, best_budgets = CampaignOptimizer.find_best_budgets(campaign)
 
@@ -78,9 +78,9 @@ class CampaignOptimizerTestCase(unittest.TestCase):
 
     def test_find_best_budgets_2(self):
         campaign = Campaign(3, 90, 4)
-        campaign.set_sub_campaign(0, [0, 3, 12, 20])
-        campaign.set_sub_campaign(1, [0, 2, 7, 10])
-        campaign.set_sub_campaign(2, [0, 5, 8, 12])
+        campaign.set_sub_campaign_values(0, [0, 3, 12, 20])
+        campaign.set_sub_campaign_values(1, [0, 2, 7, 10])
+        campaign.set_sub_campaign_values(2, [0, 5, 8, 12])
 
         max_clicks, best_budgets = CampaignOptimizer.find_best_budgets(campaign)
 
@@ -89,10 +89,10 @@ class CampaignOptimizerTestCase(unittest.TestCase):
 
     def test_find_best_budgets_3(self):
         campaign = Campaign(4, 100, 5)
-        campaign.set_sub_campaign(0, [0, 3, 12, 20, 15])
-        campaign.set_sub_campaign(1, [0, 2, 7, 10, 9])
-        campaign.set_sub_campaign(2, [0, 5, 8, 12, 18])
-        campaign.set_sub_campaign(3, [0, 9, 9, 10, 7])
+        campaign.set_sub_campaign_values(0, [0, 3, 12, 20, 15])
+        campaign.set_sub_campaign_values(1, [0, 2, 7, 10, 9])
+        campaign.set_sub_campaign_values(2, [0, 5, 8, 12, 18])
+        campaign.set_sub_campaign_values(3, [0, 9, 9, 10, 7])
 
         max_clicks, best_budgets = CampaignOptimizer.find_best_budgets(campaign)
 
@@ -104,9 +104,9 @@ class CampaignOptimizerTestCase(unittest.TestCase):
         # 100(0.0+0.3)*b = 30*x1 = max 3000
         # 100(0.2+0.2)*b = 40*x2 = max 4000
         # 100(0.4+0.1)*b = 50*x3 = max 5000
-        campaign.set_sub_campaign(0, [0, 300, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3000])
-        campaign.set_sub_campaign(1, [0, 400, 800, 1200, 1600, 2000, 2000, 2000, 2000, 2000, 2000])
-        campaign.set_sub_campaign(2, [0, 500, 1000, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500])
+        campaign.set_sub_campaign_values(0, [0, 300, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3000])
+        campaign.set_sub_campaign_values(1, [0, 400, 800, 1200, 1600, 2000, 2000, 2000, 2000, 2000, 2000])
+        campaign.set_sub_campaign_values(2, [0, 500, 1000, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500])
 
         max_clicks, best_budgets = CampaignOptimizer.find_best_budgets(campaign)
         print(max_clicks)

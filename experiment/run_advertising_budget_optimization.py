@@ -3,7 +3,6 @@ import os
 import pickle
 import sys
 from collections import Counter
-from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,14 +11,9 @@ from joblib import Parallel, delayed
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
+from utils.experiments_helper import build_combinatorial_bandit
 from environments.GeneralEnvironment import PricingAdvertisingJointEnvironment
-from advertising.regressors import DiscreteRegressor
-from advertising.regressors.DiscreteGPRegressor import DiscreteGPRegressor
-from advertising.regressors.DiscreteGaussianRegressor import DiscreteGaussianRegressor
 from advertising.data_structure.Campaign import Campaign
-from bandit.combinatiorial.CombinatorialStationaryBandit import CombinatorialStationaryBandit
-from bandit.combinatiorial.SWCombinatorialBandit import SWCombinatorialBandit
-from bandit.combinatiorial.CDCombinatorialBandit import CDCombinatorialBandit
 from environments.Settings.EnvironmentManager import EnvironmentManager
 from utils.folder_management import handle_folder_creation
 
@@ -30,6 +24,7 @@ BASIC_OUTPUT_FOLDER = "../report/project_point_2/"
 # Bandit parameters
 ALPHA = 100
 N_RESTARTS_OPTIMIZERS = 10
+INIT_STD = 1e6
 
 # Advertising settings
 SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "resources"
@@ -62,6 +57,12 @@ def get_arguments():
 
     # Bandit hyper-parameters
     parser.add_argument("-b", "--bandit_name", help="Name of the bandit to be used in the experiment")
+    parser.add_argument("-alpha", "--alpha", help="Alpha parameter for gaussian processes", type=int,
+                        default=ALPHA)
+    parser.add_argument("-n_restart_opt", "--n_restart_opt", help="Number of restarts for gaussian processes", type=int,
+                        default=N_RESTARTS_OPTIMIZERS)
+    parser.add_argument("-init_std", "--init_std", help="Initial standard deviation for regressors",
+                        type=float, default=INIT_STD)
     parser.add_argument("-sw", "--sw_size", help="Size of the sliding window for SW bandits", type=int)
     parser.add_argument("-gamma", "--gamma",
                         help="Controls the fraction of the uniform sampling over the number of arms",
@@ -79,54 +80,13 @@ def get_arguments():
     return parser.parse_args()
 
 
-def get_bandit(bandit_name: str, campaign: Campaign, init_std_dev: float = 1e6, alpha: float = ALPHA,
-               n_restarts_optimizer: int = N_RESTARTS_OPTIMIZERS) -> CDCombinatorialBandit:
-    """
-    Retrieve the bandit to be used in the experiment according to the bandit name
-
-    :param bandit_name: the name of the bandit for the experiment
-    :param campaign: the campaign over which the bandit needs to optimize the budget allocation
-    :param init_std_dev: GP parameter
-    :param alpha: GP parameter
-    :param n_restarts_optimizer: GP parameter
-    :return: bandit that will be used to carry out the experiment
-    """
-    if bandit_name == "GPBandit":
-        model_list: List[DiscreteRegressor] = [
-            DiscreteGPRegressor(list(campaign.get_budgets()), init_std_dev, alpha, n_restarts_optimizer,
-                                normalized=True)
-            for _ in range(campaign.get_n_sub_campaigns())]
-        bandit = CombinatorialStationaryBandit(campaign=campaign, model_list=model_list)
-    elif bandit_name == "GaussianBandit":
-        model_list: List[DiscreteRegressor] = [DiscreteGaussianRegressor(list(campaign.get_budgets()),
-                                                                         init_std_dev)
-                                               for _ in range(campaign.get_n_sub_campaigns())]
-        bandit = CombinatorialStationaryBandit(campaign=campaign, model_list=model_list)
-    elif bandit_name == "GPSWBandit":
-        model_list: List[DiscreteRegressor] = [
-            DiscreteGPRegressor(list(campaign.get_budgets()), init_std_dev, alpha, n_restarts_optimizer,
-                                normalized=True)
-            for _ in range(campaign.get_n_sub_campaigns())]
-        bandit = SWCombinatorialBandit(campaign=campaign, model_list=model_list, sw_size=args.sw_size)
-    elif bandit_name == "CDBandit":
-        model_list: List[DiscreteRegressor] = [
-            DiscreteGPRegressor(list(campaign.get_budgets()), init_std_dev, alpha, n_restarts_optimizer,
-                                normalized=True)
-            for _ in range(campaign.get_n_sub_campaigns())]
-        bandit = CDCombinatorialBandit(campaign=campaign, model_list=model_list, n_arms=args.n_arms,
-                                       gamma=args.gamma, cd_threshold=args.cd_threshold, sw_size=args.sw_size)
-    else:
-        raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
-
-    return bandit
-
-
 def main(args):
     scenario = EnvironmentManager.load_scenario(args.scenario_name)
     env = PricingAdvertisingJointEnvironment(scenario)
 
     campaign = Campaign(scenario.get_n_subcampaigns(), args.cum_budget, args.n_arms)
-    bandit = get_bandit(bandit_name=args.bandit_name, campaign=campaign)
+    bandit = build_combinatorial_bandit(bandit_name=args.bandit_name, campaign=campaign,
+                                        init_std=args.init_std, args=args)
     budget_allocation = [0, 0, 0]
 
     for t in range(0, args.n_rounds):

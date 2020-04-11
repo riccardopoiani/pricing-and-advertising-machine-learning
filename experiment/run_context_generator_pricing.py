@@ -8,19 +8,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed
 
-from environments.GeneralEnvironment import PricingAdvertisingJointEnvironment
-
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
-from bandit.context.ContextualBandit import ContextualBandit
-from bandit.discrete import DiscreteBandit
-from bandit.discrete.EXP3Bandit import EXP3Bandit
-from bandit.discrete.TSBanditRescaledBernoulli import TSBanditRescaledBernoulli
-from bandit.discrete.UCB1MBandit import UCB1MBandit
-from bandit.discrete.UCBLBandit import UCBLBandit
-from bandit.discrete.UCBLM import UCBLMBandit
-from bandit.discrete.UCB1Bandit import UCB1Bandit
+from utils.experiments_helper import build_contextual_bandit
+from environments.GeneralEnvironment import PricingAdvertisingJointEnvironment
 from environments.Settings.EnvironmentManager import EnvironmentManager
 from utils.folder_management import handle_folder_creation
 
@@ -70,6 +62,7 @@ def get_arguments():
 
     # Bandit hyper-parameters
     parser.add_argument("-b", "--bandit_name", help="Name of the bandit to be used in the experiment")
+
     parser.add_argument("-gamma", "--gamma",
                         help="Parameter for tuning the desire to pick an action uniformly at random",
                         type=float, default=0.1)
@@ -95,42 +88,6 @@ def get_prices(args):
         raise NotImplemented("Not implemented discretization method")
 
 
-def get_bandit(args, arm_values: np.array, n_features: int = 2) -> DiscreteBandit:
-    """
-    Retrieve the bandit to be used in the experiment according to the bandit name
-
-    :param args: command line arguments
-    :param arm_values: values of each arm
-    :param n_features: number of user features
-    :return: bandit that will be used to carry out the experiment
-    """
-    bandit_name = args.bandit_name
-
-    if bandit_name == "TS":
-        bandit_class = TSBanditRescaledBernoulli
-        bandit_kwargs = {"n_arms": N_ARMS, "arm_values": arm_values}
-    elif bandit_name == "UCB1":
-        bandit_class = UCB1Bandit
-        bandit_kwargs = {"n_arms": N_ARMS, "arm_values": arm_values}
-    elif bandit_name == "UCB1M":
-        bandit_class = UCB1MBandit
-        bandit_kwargs = {"n_arms": N_ARMS, "arm_values": arm_values}
-    elif bandit_name == "UCBL":
-        bandit_class = UCBLBandit
-        bandit_kwargs = {"n_arms": N_ARMS, "crp_upper_bound": args.crp_upper_bound, "arm_values": arm_values}
-    elif bandit_name == "UCBLM":
-        bandit_class = UCBLMBandit
-        bandit_kwargs = {"n_arms": N_ARMS, "crp_upper_bound": args.crp_upper_bound, "arm_values": arm_values}
-    elif bandit_name == "EXP3":
-        bandit_class = EXP3Bandit
-        bandit_kwargs = {"n_arms": N_ARMS, "gamma": args.gamma, "arm_values": arm_values}
-    else:
-        raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
-
-    bandit = ContextualBandit(n_features, CONFIDENCE, CONTEXT_GENERATION_FREQUENCY, bandit_class, **bandit_kwargs)
-    return bandit
-
-
 def main(args, id):
     scenario = EnvironmentManager.load_scenario(args.scenario_name)
     env = PricingAdvertisingJointEnvironment(scenario)
@@ -138,7 +95,9 @@ def main(args, id):
 
     prices = get_prices(args=args)
     arm_profit = prices - args.unit_cost
-    bandit = get_bandit(args=args, arm_values=prices)
+    bandit = build_contextual_bandit(bandit_name=args.bandit_name, n_arms=len(arm_profit),
+                                     arm_values=prices, n_features=scenario.get_n_user_features(),
+                                     context_generation_frequency=args.context_gen_freq, args=args)
 
     env.next_day()
 
@@ -238,8 +197,8 @@ if args.save_result:
     # Plot cumulative regret and instantaneous reward
     daily_rewards = np.zeros(shape=(args.n_runs, args.n_days), dtype=np.float)
     for exp in range(args.n_runs):
-        for day in range(0, len(day_breakpoint[exp]-1)):
-            daily_rewards[exp, day] = np.sum(rewards[exp][day_breakpoint[exp][day]: day_breakpoint[exp][day+1]])
+        for day in range(0, len(day_breakpoint[exp] - 1)):
+            daily_rewards[exp, day] = np.sum(rewards[exp][day_breakpoint[exp][day]: day_breakpoint[exp][day + 1]])
 
     # Calculates optimal rewards (for clairvoyant algorithm)
     rewards = np.mean(daily_rewards, axis=0)
