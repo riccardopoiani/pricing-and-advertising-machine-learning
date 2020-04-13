@@ -13,6 +13,7 @@ sys.path.append("../")
 
 from bandit.joint.AdValueStrategy import QuantileAdValueStrategy, ExpectationAdValueStrategy
 from bandit.joint.JointBanditFixedDailyPriceQuantile import JointBanditFixedDailyPriceQuantile
+from bandit.joint.JointBanditFixedDailyPriceTS import JointBanditFixedDailyPriceTS
 from bandit.joint.JointBanditDiscriminatory import JointBanditDiscriminatory
 from bandit.joint.JointBanditBalanced import JointBanditBalanced
 from advertising.data_structure.Campaign import Campaign
@@ -25,7 +26,7 @@ from utils.experiments_helper import build_combinatorial_bandit, build_discrete_
 from bandit.joint.IJointBandit import IJointBandit
 
 # Basic default settings
-N_DAYS = 200
+N_DAYS = 50
 BASIC_OUTPUT_FOLDER = "../report/project_point_6_7/"
 
 # Scenario
@@ -155,7 +156,7 @@ def get_bandit(args, arm_values: np.array, campaign: Campaign) -> IJointBandit:
                                      price_learner_kwargs=price_bandit_kwargs, number_of_visit_model_list=model_list,
                                      ad_value_strategy=ad_value_strategy)
     elif bandit_name == "JBFQ":
-        assert args.daily_price, "This joint bandit requires to run it in a daily manner"
+        assert args.daily_price, "This joint bandit requires to run in a daily manner"
 
         model_list: List[DiscreteRegressor] = [
             DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restart_opt,
@@ -163,6 +164,15 @@ def get_bandit(args, arm_values: np.array, campaign: Campaign) -> IJointBandit:
         bandit = JointBanditFixedDailyPriceQuantile(campaign=campaign, number_of_visit_model_list=model_list,
                                                     min_std=args.min_std_q, arm_profit=arm_values,
                                                     n_arms_profit=len(arm_values))
+    elif bandit_name == "JBFTS":
+        assert args.daily_price, "This joint bandit requires to run in a daily manner"
+
+        model_list: List[DiscreteRegressor] = [
+            DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restart_opt,
+                                normalized=True) for _ in range(campaign.get_n_sub_campaigns())]
+        bandit = JointBanditFixedDailyPriceTS(campaign=campaign, number_of_visit_model_list=model_list,
+                                              arm_profit=arm_values,
+                                              n_arms_profit=len(arm_values))
     else:
         raise argparse.ArgumentParser("The name of the bandit to be used is not in the available ones")
 

@@ -1,15 +1,15 @@
 from typing import List
 
 import numpy as np
-from scipy.stats import norm
 
 from advertising.data_structure.Campaign import Campaign
 from advertising.optimizers.CampaignOptimizer import CampaignOptimizer
 from advertising.regressors.DiscreteRegressor import DiscreteRegressor
+from bandit.discrete.TSBanditRescaledBernoulli import TSBanditRescaledBernoulli
 from bandit.joint.IJointBandit import IJointBandit
 
 
-class JointBanditFixedDailyPriceQuantile(IJointBandit):
+class JointBanditFixedDailyPriceTS(IJointBandit):
     """
     Optimize the joint problem of advertising and pricing in the following way:
     - A price is decided for a whole day and all classes of users: data is collected
@@ -20,10 +20,12 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
     for the advertising click are considered in order to trade-off exploration and exploitation:
     the best among these results is considered for the next day as best price and as the best
     budget to be invested
+    - In particular, in such case, exploration-exploitation trade-off is carried out
+    with a thompson-sampling approach
     """
 
     def __init__(self, campaign: Campaign, number_of_visit_model_list: List[DiscreteRegressor],
-                 n_arms_profit: int, arm_profit: np.array, min_std: float):
+                 n_arms_profit: int, arm_profit: np.array):
         assert len(number_of_visit_model_list) == campaign.get_n_sub_campaigns()
 
         super().__init__(campaign=campaign)
@@ -36,9 +38,9 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
         # Pricing data structure
         self.n_arms_price: int = n_arms_profit
         self.arm_profit = arm_profit
-        self.profit_arm_reward_list = [[[] for _ in range(n_arms_profit)] for _ in
-                                       range(campaign.get_n_sub_campaigns())]
-        self.min_std = min_std
+        self.ts_bandit_list: List[TSBanditRescaledBernoulli] = [TSBanditRescaledBernoulli(n_arms=n_arms_profit,
+                                                                                          arm_values=arm_profit)
+                                                                for _ in range(campaign.get_n_sub_campaigns())]
 
         # Current data structure
         self.current_pricing_arm_idx = np.random.randint(low=0, high=n_arms_profit, size=1)
@@ -60,12 +62,12 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
         return self.curr_best_budget_idx
 
     def update_price(self, user_class, pulled_arm, observed_reward) -> None:
-        super(JointBanditFixedDailyPriceQuantile, self).update_price(user_class, pulled_arm, observed_reward)
+        super(JointBanditFixedDailyPriceTS, self).update_price(user_class, pulled_arm, observed_reward)
 
-        self.profit_arm_reward_list[user_class][pulled_arm].append(observed_reward)
+        self.ts_bandit_list[user_class].update(pulled_arm=pulled_arm, reward=observed_reward)
 
     def update_budget(self, pulled_arm_list: List[int], n_visits: List[float]):
-        super(JointBanditFixedDailyPriceQuantile, self).update_budget(pulled_arm_list, n_visits)
+        super(JointBanditFixedDailyPriceTS, self).update_budget(pulled_arm_list, n_visits)
 
         # Update data structure
         for i in range(self.campaign.get_n_sub_campaigns()):
@@ -78,19 +80,10 @@ class JointBanditFixedDailyPriceQuantile(IJointBandit):
                             pulled_arm_history=self.pulled_arm_sub_campaign[sub_index])
 
         # For all the sub-campaigns and profit-arms compute mean and std, and the quantile
-        mean_ad_value = np.zeros(shape=(self.campaign.get_n_sub_campaigns(), self.n_arms_price))
-        std_ad_value = np.zeros(shape=(self.campaign.get_n_sub_campaigns(), self.n_arms_price))
-        percentile = 1 - (1 / (self.day_t + 1))
+        estimated_ad_value = np.zeros(shape=(self.campaign.get_n_sub_campaigns(), self.n_arms_price))
 
         for c in range(self.campaign.get_n_sub_campaigns()):
-            for arm in range(self.n_arms_price):
-                values = np.array(self.profit_arm_reward_list[c][arm])
-                mean_ad_value[c][arm] = values.mean() if len(values) > 0 else self.arm_profit[arm]
-                std_ad_value[c][arm] = values.std() if len(values) > 0 else self.arm_profit[arm]
-
-        std_ad_value = np.where(std_ad_value < self.min_std, self.min_std, std_ad_value)
-
-        estimated_ad_value = norm.ppf(q=percentile, loc=mean_ad_value, scale=std_ad_value)
+            estimated_ad_value[c] = self.ts_bandit_list[c].sample_beta_distribution() * self.arm_profit
 
         # Sample the number of visits for each sub-campaign
         sample_visit = np.zeros(
