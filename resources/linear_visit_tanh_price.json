@@ -11,10 +11,10 @@
         {
           "type": "tanh",
           "info": {
-            "coefficient": 0.125,
-            "x_offset": 10,
-            "y_offset": 0.025,
-            "dilation": 2,
+            "coefficient": 0.1,
+            "x_offset": 8,
+            "y_offset": 0,
+            "dilation": 3,
             "min_price": 15,
             "max_price": 25
           }
@@ -22,10 +22,10 @@
         {
           "type": "tanh",
           "info": {
-            "coefficient": 0.1,
-            "x_offset": 8,
-            "y_offset": 0,
-            "dilation": 3,
+            "coefficient": 0.125,
+            "x_offset": 10,
+            "y_offset": 0.025,
+            "dilation": 2,
             "min_price": 15,
             "max_price": 25
           }

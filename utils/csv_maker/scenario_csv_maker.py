@@ -18,7 +18,7 @@ from utils.stats.StochasticFunction import IStochasticFunction
 Script for generating CSV files to create latex plots concerning scenarios
 """
 
-SCENARIO_NAME = "linear_scenario"
+SCENARIO_NAME = "linear_non_stationary_scenario"
 FOLDER_RESULT = "../../report/csv/{}/".format(SCENARIO_NAME)
 PLOT_INTERVAL = 3
 PRICE_PLOT_N_POINTS = 100
@@ -27,6 +27,7 @@ MIN_PRICE = 15
 MAX_PRICE = 25
 MIN_BUDGET = 0
 MAX_DAILY_CUM_BUDGET = 1000
+FIXED_COST = 12
 
 GET_PROFIT_DATA_DISAGGREGATED = True  # whether to get data regarding the profit of each class of users
 GET_CRP_DATA_DISAGGREGATED = True  # whether to get data regarding the CRP of each class of users
@@ -61,9 +62,9 @@ for phase_idx, phase in enumerate(mean_scenario.get_phases()):
     profit_data[-1] = price_point_arr
     for i, crp in enumerate(crp_list):
         for j, point in enumerate(price_point_arr):
-            profit_data[i][j] = crp.draw_sample(point)
+            profit_data[i][j] = crp.draw_sample(point) * (point - 12)
 
-    profit_df: pd.DataFrame = pd.DataFrame(crp_data.transpose())
+    profit_df: pd.DataFrame = pd.DataFrame(profit_data.transpose())
     profit_df.rename(columns={0: "profit_0", 1: "profit_1", 2: "profit_2", 3: "price"}, inplace=True)
     profit_df.to_csv("{}phase_{}_profit_data.csv".format(folder_path_with_date, phase_idx), index=False)
 
