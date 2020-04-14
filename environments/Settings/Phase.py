@@ -25,7 +25,7 @@ class Phase(object):
     def get_n_subcampaigns(self):
         return len(self._crp_functions)
 
-    def get_all_n_clicks(self, budget_allocation: List[float]) -> List[float]:
+    def get_all_n_clicks_sample(self, budget_allocation: List[float]) -> List[float]:
         """
         :param budget_allocation: list of budgets that are allocated
         :return: the list of number of clicks for each subcampaign
@@ -33,7 +33,7 @@ class Phase(object):
         return [self._n_clicks_functions[idx].draw_sample(budget_allocation[idx])
                 for idx in range(len(self._n_clicks_functions))]
 
-    def get_n_clicks(self, sub_idx: int, budget: float) -> float:
+    def get_n_clicks_sample(self, sub_idx: int, budget: float) -> float:
         """
         :param sub_idx: the subcampaign index
         :param budget: the chosen budget
@@ -41,7 +41,7 @@ class Phase(object):
         """
         return self._n_clicks_functions[sub_idx].draw_sample(budget)
 
-    def get_all_crp(self, price: List[float]) -> List[float]:
+    def get_all_crp_sample(self, price: List[float]) -> List[float]:
         """
         :param price: the list of prices chosen for each conversion rate probability
         :return: the list of conversion rate probability for each class (equivalent to number of subcampaigns)
@@ -49,10 +49,16 @@ class Phase(object):
         return [self._crp_functions[idx].draw_sample(price[idx])
                 for idx in range(len(self._crp_functions))]
 
-    def get_crp(self, class_idx: int, price: float) -> float:
+    def get_crp_sample(self, class_idx: int, price: float) -> float:
         """
         :param class_idx: the class index
         :param price: the chosen price
         :return: the conversion rate probability for the given class and price
         """
         return self._crp_functions[class_idx].draw_sample(price)
+
+    def get_crp_function(self):
+        return self._crp_functions
+
+    def get_n_clicks_function(self):
+        return self._n_clicks_functions

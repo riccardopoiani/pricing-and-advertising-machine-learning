@@ -204,7 +204,7 @@ if args.save_result:
     rewards = np.mean(daily_rewards, axis=0)
     scenario = EnvironmentManager.load_scenario(args.scenario_name)
     env = PricingAdvertisingJointEnvironment(scenario)
-    clicks_per_subcampaign = scenario.get_phases()[0].get_all_n_clicks([args.budget] * scenario.get_n_subcampaigns())
+    clicks_per_subcampaign = scenario.get_phases()[0].get_all_n_clicks_sample([args.budget] * scenario.get_n_subcampaigns())
     total_revenue_per_price = np.zeros(shape=(args.n_arms, scenario.get_n_subcampaigns()))
     for i, price in enumerate(get_prices(args)):
         crps = EnvironmentManager.get_crps_for_prices(args.scenario_name, [price] * scenario.get_n_subcampaigns())[0]

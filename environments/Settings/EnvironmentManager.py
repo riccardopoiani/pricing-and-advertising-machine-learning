@@ -13,7 +13,7 @@ from utils.stats.StochasticFunction import IStochasticFunction, BoundedLambdaSto
 class EnvironmentManager(object):
 
     @classmethod
-    def create_n_clicks_function(cls, function_dict: dict) -> IStochasticFunction:
+    def create_n_clicks_function(cls, function_dict: dict, get_mean_function) -> IStochasticFunction:
         """
         Create the number of clicks function given a dictionary of template:
             {
@@ -24,6 +24,7 @@ class EnvironmentManager(object):
             }
 
         :param function_dict: dictionary containing info related to the function
+        :param get_mean_function: whether to get the stochastic function or the mean function
         :return: an IStochasticFunction representing the number of clicks chosen
         """
         if function_dict["type"] == "linear":
@@ -33,9 +34,14 @@ class EnvironmentManager(object):
                 if upper_bound is None:
                     upper_bound = np.inf
 
-                return lambda x: \
-                    0 if x == 0 else max(int(np.random.normal(np.maximum(np.minimum(coefficient * x + bias, upper_bound), lower_bound),
-                                             noise_std)), 0)  # function returns positive int numbers
+                if get_mean_function:
+                    return lambda x: \
+                        0 if x == 0 else max(int(np.maximum(np.minimum(coefficient * x + bias, upper_bound),
+                                                            lower_bound)), 0)  # function returns positive int numbers
+                else:
+                    return lambda x: \
+                        0 if x == 0 else max(int(np.random.normal(np.maximum(np.minimum(coefficient * x + bias, upper_bound), lower_bound),
+                                                 noise_std)), 0)  # function returns positive int numbers
 
             function_info = function_dict["info"]
             fun: IStochasticFunction = BoundedLambdaStochasticFunction(
@@ -49,7 +55,7 @@ class EnvironmentManager(object):
         return fun
 
     @classmethod
-    def create_crp_function(cls, function_dict: dict) -> IStochasticFunction:
+    def create_crp_function(cls, function_dict: dict, get_mean_function) -> IStochasticFunction:
         """
         Create the conversion rate probability function given a dictionary of template:
             {
@@ -60,12 +66,15 @@ class EnvironmentManager(object):
             }
 
         :param function_dict: the dictionary about the conversion rate probability to create
+        :param get_mean_function: whether to get the mean function or the stochastic version
         :return: an IStochasticFunction representing the conversion rate probability
         """
         if function_dict["type"] == "linear":
             def linear_generator_function(coefficient, min_price, max_crp):
-                return lambda x: \
-                    np.random.binomial(n=1, p=np.max([0, coefficient * (-x + min_price) + max_crp]))
+                if get_mean_function:
+                    return lambda x: np.max([0, coefficient * (-x + min_price) + max_crp])
+                else:
+                    return lambda x: np.random.binomial(n=1, p=np.max([0, coefficient * (-x + min_price) + max_crp]))
 
             function_info = function_dict["info"]
             fun: IStochasticFunction = BoundedLambdaStochasticFunction(
@@ -75,7 +84,10 @@ class EnvironmentManager(object):
                 min_value=function_info["min_price"], max_value=function_info["max_price"])
         elif function_dict["type"] == "tanh":
             def tanh_generator_function(coefficient, x_offset, dilation, y_offset):
-                return lambda x: np.random.binomial(n=1, p=coefficient * np.tanh(x_offset - x/dilation) + y_offset)
+                if get_mean_function:
+                    return lambda x: coefficient * np.tanh(x_offset - x/dilation) + y_offset
+                else:
+                    return lambda x: np.random.binomial(n=1, p=coefficient * np.tanh(x_offset - x/dilation) + y_offset)
 
             function_info = function_dict["info"]
             fun: IStochasticFunction = BoundedLambdaStochasticFunction(
@@ -113,13 +125,14 @@ class EnvironmentManager(object):
             return crps_per_phase
 
     @classmethod
-    def load_scenario(cls, scenario_name: str, verbose=False) -> Scenario:
+    def load_scenario(cls, scenario_name: str, verbose=False, get_mean_function=False) -> Scenario:
         """
         Load a scenario on the basis of its name
 
         :param verbose: whether to print out information regarding the environment
         :param scenario_name: name of the scenario which is also the filename of the json file saved in the resources
                               folder
+        :param get_mean_function: whether to get a stochastic function or a mean function
         :return: a list of phases contained in the scenario chosen
         """
         scenario_folder = get_resource_folder_path()
@@ -144,10 +157,11 @@ class EnvironmentManager(object):
                 n_clicks_functions: List[IStochasticFunction] = []
 
                 for crp_function in phase_dict["crp_functions"]:
-                    crp_functions.append(cls.create_crp_function(crp_function))
+                    crp_functions.append(cls.create_crp_function(crp_function, get_mean_function=get_mean_function))
 
                 for n_clicks_function in phase_dict["n_clicks_functions"]:
-                    n_clicks_functions.append(cls.create_n_clicks_function(n_clicks_function))
+                    n_clicks_functions.append(cls.create_n_clicks_function(n_clicks_function,
+                                                                           get_mean_function=get_mean_function))
 
                 # Verify that the crp functions and n_clicks functions has both "n_subcampaigns" functions
                 assert len(crp_functions) == n_subcampaigns

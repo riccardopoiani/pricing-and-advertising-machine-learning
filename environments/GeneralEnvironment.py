@@ -34,7 +34,7 @@ class PricingAdvertisingJointEnvironment(Environment):
         :return: (true if the user buys the product false otherwise, true if the day users are over false otherwise)
         """
         self.user_count += 1
-        return self.current_phase.get_crp(class_idx=self.current_user_class, price=price), len(self.sampled_users) == 0
+        return self.current_phase.get_crp_sample(class_idx=self.current_user_class, price=price), len(self.sampled_users) == 0
 
     def next_day(self) -> bool:
         """
@@ -46,7 +46,7 @@ class PricingAdvertisingJointEnvironment(Environment):
         self.current_phase = self.get_current_phase()
         self.sampled_users = []
 
-        n_users_list = self.current_phase.get_all_n_clicks(budget_allocation=self.budget_allocation)
+        n_users_list = self.current_phase.get_all_n_clicks_sample(budget_allocation=self.budget_allocation)
         for i in range(len(n_users_list)):
             min_contexts = self.scenario.get_min_contexts_for_subcampaign(i)
             for min_context in min_contexts:
