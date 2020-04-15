@@ -35,8 +35,7 @@ GET_ADS_DATA_DISAGGREGATED = True  # whether to get data regarding the number of
 
 # Script begins
 fd, folder_path_with_date = handle_folder_creation(result_path=FOLDER_RESULT, retrieve_text_file=False)
-mean_scenario: Scenario = EnvironmentManager.load_scenario(SCENARIO_NAME,
-                                                           get_mean_function=True)
+mean_scenario: Scenario = EnvironmentManager.load_scenario(SCENARIO_NAME, get_mean_function=True)
 
 # For all the phases print on a CSV data to reconstruct a function
 for phase_idx, phase in enumerate(mean_scenario.get_phases()):
@@ -78,3 +77,5 @@ for phase_idx, phase in enumerate(mean_scenario.get_phases()):
     ads_df: pd.DataFrame = pd.DataFrame(ads_data.transpose())
     ads_df.rename(columns={0: "mean_click_0", 1: "mean_click_1", 2: "mean_click_2", 3: "budget"}, inplace=True)
     ads_df.to_csv("{}phase_{}_ads_data.csv".format(folder_path_with_date, phase_idx), index=False)
+
+

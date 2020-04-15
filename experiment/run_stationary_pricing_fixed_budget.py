@@ -3,7 +3,6 @@ import os
 import pickle
 import sys
 
-import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed
 
@@ -16,7 +15,7 @@ from utils.experiments_helper import build_discrete_bandit
 from utils.folder_management import handle_folder_creation
 
 # Basic default settings
-N_ROUNDS = 40000
+N_ROUNDS = 500000
 BASIC_OUTPUT_FOLDER = "../report/project_point_4/"
 
 # Pricing settings
@@ -80,6 +79,7 @@ def get_prices(args):
     else:
         raise NotImplemented("Not implemented discretization method")
 
+
 def main(args):
     scenario = EnvironmentManager.load_scenario(args.scenario_name)
     env = PricingAdvertisingJointEnvironment(scenario)
@@ -88,7 +88,7 @@ def main(args):
     prices = get_prices(args=args)
     arm_profit = prices - args.unit_cost
     bandit = build_discrete_bandit(bandit_name=args.bandit_name, n_arms=len(arm_profit),
-                                                     arm_values=arm_profit, args=args)
+                                   arm_values=arm_profit, args=args)
 
     iterate = not env.next_day()
     while iterate:
@@ -171,19 +171,3 @@ if args.save_result:
     fd.write("Gamma parameter (EXP3) {}\n".format(args.gamma))
 
     fd.close()
-
-    daily_rewards = np.zeros(shape=(args.n_runs, len(day_breakpoint[0]) + 1), dtype=np.float)
-    for i in range(args.n_runs):
-        for j in range(0, len(day_breakpoint[i]-1)):
-            daily_rewards[i, j] = np.sum(rewards[i][day_breakpoint[i][j]: day_breakpoint[i][j+1]])
-    final_rewards = np.mean(daily_rewards, axis=0)
-
-    os.chdir(folder_path_with_date)
-
-    plt.figure(0)
-    plt.plot(final_rewards, 'g')
-    plt.xlabel("t")
-    plt.ylabel("Instantaneous Reward")
-    plt.suptitle("Context Generation - REWARD")
-    plt.title(str(args.n_runs) + " Experiments - " + str(args.bandit_name))
-    plt.savefig(fname="Reward.png", format="png")
