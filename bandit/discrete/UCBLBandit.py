@@ -20,7 +20,6 @@ class UCBLBandit(DiscreteBandit):
         self.round_per_arm: np.array = np.zeros(n_arms)
         self.expected_bernoulli: np.array = np.zeros(n_arms)
         self.upper_bound: np.array = np.ones(n_arms)
-        self.max_values: float = np.max(arm_values)
 
     def pull_arm(self) -> int:
         """
@@ -56,25 +55,21 @@ class UCBLBandit(DiscreteBandit):
         """
         self.t += 1
         self.update_observations(pulled_arm, reward)
-        reward = reward / self.max_values
+
+        observed_bernoulli = 0 if reward == 0 else 1
 
         # update the number of times the arm has been pulled
         self.round_per_arm[pulled_arm] += 1
 
         # update the expected bernoulli of the pulled arm
-        if reward != 0:
-            self.expected_bernoulli[pulled_arm] = (self.expected_bernoulli[pulled_arm] *
-                                                   (self.round_per_arm[pulled_arm] - 1) +
-                                                   (reward / reward)) / self.round_per_arm[pulled_arm]
-        else:
-            self.expected_bernoulli[pulled_arm] = (self.expected_bernoulli[pulled_arm] *
-                                                   (self.round_per_arm[pulled_arm] - 1)) / self.round_per_arm[
-                                                      pulled_arm]
+        self.expected_bernoulli[pulled_arm] = (self.expected_bernoulli[pulled_arm] *
+                                               (self.round_per_arm[pulled_arm] - 1) +
+                                               observed_bernoulli) / self.round_per_arm[pulled_arm]
 
         # update upper confidence bound
         self.upper_bound = self.expected_bernoulli + np.sqrt((8 * self.crp_upper_bound * np.log(self.t))
                                                              / self.round_per_arm)
 
     def get_optimal_arm(self) -> int:
-        expected_rewards = self.expected_bernoulli*self.arm_values
+        expected_rewards = self.expected_bernoulli * self.arm_values
         return int(np.argmax(expected_rewards))

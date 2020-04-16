@@ -113,7 +113,7 @@ def main(args, id):
             reward, _ = env.round(price=prices[price_idx])
             reward = reward * arm_profit[price_idx]
             # Update bandit
-            bandit.update(min_context=user_min_context, pulled_arm=price_idx, reward=reward)
+            bandit.update(min_context=user_min_context, pulled_arm=price_idx, bernoulli_sample=reward)
         bandit.next_day()
         env.next_day()
         if i % 7 == 0:

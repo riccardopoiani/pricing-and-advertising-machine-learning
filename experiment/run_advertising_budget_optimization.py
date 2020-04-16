@@ -100,7 +100,7 @@ def main(args):
         rewards = env.get_daily_visits_per_sub_campaign()
 
         # Update bandit
-        bandit.update(pulled_arm=budget_allocation_indexes, reward=rewards)
+        bandit.update(pulled_arm=budget_allocation_indexes, bernoulli_sample=rewards)
 
     return bandit.collected_rewards, budget_allocation
 

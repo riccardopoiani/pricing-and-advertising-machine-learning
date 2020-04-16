@@ -15,7 +15,6 @@ class UCB1MBandit(DiscreteBandit):
         self.round_per_arm: np.array = np.zeros(n_arms)
         self.expected_bernoulli: np.array = np.zeros(n_arms)
         self.upper_bound: np.array = np.ones(n_arms)
-        self.max_value: float = np.max(arm_values)
 
     def pull_arm(self) -> int:
         """
@@ -52,40 +51,36 @@ class UCB1MBandit(DiscreteBandit):
         self.t += 1
         self.update_observations(pulled_arm, reward)
 
-        reward = reward / self.max_value
+        observed_bernoulli = 0 if reward == 0 else 1
 
         # update the number of times the arm has been pulled
         self.round_per_arm[pulled_arm] += 1
 
         # update the expected bernoulli of the pulled arm
-        if reward != 0:
-            self.expected_bernoulli[pulled_arm] = (self.expected_bernoulli[pulled_arm] *
-                                                   (self.round_per_arm[pulled_arm]-1) +
-                                                   (reward/reward)) / self.round_per_arm[pulled_arm]
-        else:
-            self.expected_bernoulli[pulled_arm] = (self.expected_bernoulli[pulled_arm] *
-                                                   (self.round_per_arm[pulled_arm] - 1)) / self.round_per_arm[pulled_arm]
+        self.expected_bernoulli[pulled_arm] = (self.expected_bernoulli[pulled_arm] *
+                                               (self.round_per_arm[pulled_arm] - 1) +
+                                               observed_bernoulli) / self.round_per_arm[pulled_arm]
 
         # for each arm a, update its upper confidence bound
         for a in range(0, self.n_arms):
             bound_list = []
             # for each possible starting_arm, compute one possible bound for arm a
-            for starting_arm in range(0, a+1):
+            for starting_arm in range(0, a + 1):
                 # sum the number of times the arms from starting_arm to a have been pulled
-                round_per_previous_arms = self.round_per_arm[starting_arm:a+1].sum()
+                round_per_previous_arms = self.round_per_arm[starting_arm:a + 1].sum()
 
                 non_normalized_expected_bernoulli = 0
-                for arm in range(starting_arm, a+1):
+                for arm in range(starting_arm, a + 1):
                     non_normalized_expected_bernoulli += self.round_per_arm[arm] * self.expected_bernoulli[arm]
 
                 expected_bernoulli_per_previous_arm = non_normalized_expected_bernoulli / round_per_previous_arms
                 bound_list.append(
-                    expected_bernoulli_per_previous_arm + np.sqrt(((4 * np.log(self.t)) + np.log(a+1)) /
-                                                               (2 * round_per_previous_arms)))
+                    expected_bernoulli_per_previous_arm + np.sqrt(((4 * np.log(self.t)) + np.log(a + 1)) /
+                                                                  (2 * round_per_previous_arms)))
             # minimize the list of possible bounds by the starting_arm
             # and assign the minimized term to the upper bound of arm a
             self.upper_bound[a] = min(bound_list)
 
     def get_optimal_arm(self) -> int:
-        expected_rewards = self.expected_bernoulli*self.arm_values
+        expected_rewards = self.expected_bernoulli * self.arm_values
         return int(np.argmax(expected_rewards))

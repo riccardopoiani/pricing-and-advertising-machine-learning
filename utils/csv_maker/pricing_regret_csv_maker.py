@@ -17,18 +17,34 @@ from utils.stats.StochasticFunction import IStochasticFunction, AggregatedFuncti
 
 FOLDER_RESULT = "../../report/csv/pricing_bandit/"
 
+CSV_DISCRETE_USER_REGRET = True
+CSV_CONTINUE_USER_REGRET = True
+CSV_DAILY_DISCRETE_REGRET = True
+CSV_DAILY_CONT_REGRET = True
+
 SCENARIO_NAME = "linear_scenario"
+N_ARMS_PRICE = 10
 FIXED_BUDGET = [1000 / 3, 1000 / 3, 1000 / 3]
 PRICE_PLOT_N_POINTS = 100
 ADS_PLOT_N_POINTS = 100
 MIN_PRICE = 15
 MAX_PRICE = 25
 FIXED_COST = 12
-REWARD_FILE_LIST = ["../../report/project_point_4/Apr14_22-45-22/reward_TS.pkl",
-                    "../../report/project_point_4/Apr14_22-46-29/reward_UCB1.pkl"]
-DAYS_FILE_LIST = ["../../report/project_point_4/Apr14_22-45-22/day_TS.pkl",
-                  "../../report/project_point_4/Apr14_22-46-29/day_UCB1.pkl"]
-BANDIT_NAME = ["TS", "UCB1"]
+REWARD_FILE_LIST = ["../../report/project_point_4/Apr16_22-58-37/reward_TS.pkl",
+                    "../../report/project_point_4/Apr16_23-06-28/reward_UCB1.pkl",
+                    "../../report/project_point_4/Apr16_23-07-18/reward_UCBL.pkl",
+                    "../../report/project_point_4/Apr16_23-10-28/reward_UCB1M.pkl",
+                    "../../report/project_point_4/Apr16_23-14-22/reward_UCBLM.pkl",
+                    "../../report/project_point_4/Apr16_23-15-33/reward_EXP3.pkl"]
+
+DAYS_FILE_LIST = ["../../report/project_point_4/Apr16_22-58-37/day_TS.pkl",
+                  "../../report/project_point_4/Apr16_23-06-28/day_UCB1.pkl",
+                  "../../report/project_point_4/Apr16_23-07-18/day_UCBL.pkl",
+                  "../../report/project_point_4/Apr16_23-10-28/day_UCB1M.pkl",
+                  "../../report/project_point_4/Apr16_23-14-22/day_UCBLM.pkl",
+                  "../../report/project_point_4/Apr16_23-15-33/day_EXP3.pkl"]
+
+BANDIT_NAME = ["TS", "UCB1", "UCBL", "UCB1M", "UCBLM", "EXP3"]
 
 n_bandit = len(BANDIT_NAME)
 _, folder_path_with_date = handle_folder_creation(result_path=FOLDER_RESULT, retrieve_text_file=False)
@@ -144,36 +160,142 @@ print("Optimal mean reward is {}, reached at x={}\n".format(optimal_mean_reward_
 print("Optimal mean daily reward is {}, since there are {} daily users".format(optimal_mean_daily_reward,
                                                                                average_daily_users))
 # Compute regret
-mean_regret_data = np.zeros(shape=(n_bandit + 1, n_days))
-std_regret_data = np.zeros(shape=(n_bandit + 1, n_days))
-mean_regret_data[-1] = np.arange(n_days) + 1
-std_regret_data[-1] = np.arange(n_days) + 1
+if CSV_DAILY_CONT_REGRET:
+    mean_regret_data = np.zeros(shape=(n_bandit + 1, n_days))
+    std_regret_data = np.zeros(shape=(n_bandit + 1, n_days))
+    mean_regret_data[-1] = np.arange(n_days) + 1
+    std_regret_data[-1] = np.arange(n_days) + 1
 
-for bandit_idx in range(len(BANDIT_NAME)):
-    n_exp = len(total_reward_list[bandit_idx])
+    for bandit_idx in range(len(BANDIT_NAME)):
+        n_exp = len(total_reward_list[bandit_idx])
 
-    for curr_day in range(n_days):
-        daily_values = []
-        for exp in range(n_exp):
-            end_user = total_day_list[bandit_idx][exp][curr_day + 1]
-            daily_values.append((curr_day + 1) * optimal_mean_daily_reward - np.array(
-                total_reward_list[bandit_idx][exp][0:end_user]).sum())
+        for curr_day in range(n_days):
+            daily_values = []
+            for exp in range(n_exp):
+                end_user = total_day_list[bandit_idx][exp][curr_day + 1]
+                daily_values.append((curr_day + 1) * optimal_mean_daily_reward - np.array(
+                    total_reward_list[bandit_idx][exp][0:end_user]).sum())
 
-        mean_regret_data[bandit_idx][curr_day] = np.array(daily_values).mean()
-        std_regret_data[bandit_idx][curr_day] = np.array(daily_values).std()
+            mean_regret_data[bandit_idx][curr_day] = np.array(daily_values).mean()
+            std_regret_data[bandit_idx][curr_day] = np.array(daily_values).std()
 
-mean_df = pd.DataFrame(mean_regret_data.transpose())
-std_df = pd.DataFrame(std_regret_data.transpose())
+    mean_df = pd.DataFrame(mean_regret_data.transpose())
+    std_df = pd.DataFrame(std_regret_data.transpose())
 
-for bandit_idx, name in enumerate(BANDIT_NAME):
-    mean_df.rename(columns={bandit_idx: "mean_regret_{}".format(name)}, inplace=True)
+    for bandit_idx, name in enumerate(BANDIT_NAME):
+        mean_df.rename(columns={bandit_idx: "mean_regret_{}".format(name)}, inplace=True)
 
-mean_df.rename(columns={n_bandit: "day"}, inplace=True)
+    mean_df.rename(columns={n_bandit: "day"}, inplace=True)
 
-for bandit_idx, name in enumerate(BANDIT_NAME):
-    std_df.rename(columns={bandit_idx: "std_regret_{}".format(name)}, inplace=True)
+    for bandit_idx, name in enumerate(BANDIT_NAME):
+        std_df.rename(columns={bandit_idx: "std_regret_{}".format(name)}, inplace=True)
 
-std_df.rename(columns={n_bandit: "day"}, inplace=True)
+    std_df.rename(columns={n_bandit: "day"}, inplace=True)
 
-total_df = mean_df.merge(std_df, left_on="day", right_on="day")
-total_df.to_csv("{}regret.csv".format(folder_path_with_date), index=False)
+    total_df = mean_df.merge(std_df, left_on="day", right_on="day")
+    total_df.to_csv("{}daily_regret.csv".format(folder_path_with_date), index=False)
+
+# Regret computation with correct arms (and not all the function)
+aggregated_profit: MultipliedStochasticFunction = MultipliedStochasticFunction(aggregated_crp, shift=-FIXED_COST)
+points = np.linspace(start=MIN_PRICE, stop=MAX_PRICE, num=N_ARMS_PRICE)
+profit_points = np.array([aggregated_profit.draw_sample(x) for x in points])
+optimal_discrete_profit = profit_points.max()
+average_daily_users = np.array([f.draw_sample(FIXED_BUDGET[i]) for i, f in enumerate(click_function_list)]).sum()
+optimal_mean_daily_reward_discrete = optimal_discrete_profit * average_daily_users
+
+print("Optimal mean discrete reward is {}, reached for arm index = {}\n".format(optimal_mean_daily_reward_discrete,
+                                                                                profit_points.argmax()))
+print("Optimal mean daily reward is {}, since there are {} daily users".format(optimal_mean_daily_reward,
+                                                                               average_daily_users))
+
+if CSV_DAILY_DISCRETE_REGRET:
+    mean_regret_data = np.zeros(shape=(n_bandit + 1, n_days))
+    std_regret_data = np.zeros(shape=(n_bandit + 1, n_days))
+    mean_regret_data[-1] = np.arange(n_days) + 1
+    std_regret_data[-1] = np.arange(n_days) + 1
+
+    for bandit_idx in range(len(BANDIT_NAME)):
+        n_exp = len(total_reward_list[bandit_idx])
+
+        for curr_day in range(n_days):
+            daily_values = []
+            for exp in range(n_exp):
+                end_user = total_day_list[bandit_idx][exp][curr_day + 1]
+                daily_values.append((curr_day + 1) * optimal_mean_daily_reward_discrete - np.array(
+                    total_reward_list[bandit_idx][exp][0:end_user]).sum())
+
+            mean_regret_data[bandit_idx][curr_day] = np.array(daily_values).mean()
+            std_regret_data[bandit_idx][curr_day] = np.array(daily_values).std()
+
+    mean_df = pd.DataFrame(mean_regret_data.transpose())
+    std_df = pd.DataFrame(std_regret_data.transpose())
+    for bandit_idx, name in enumerate(BANDIT_NAME):
+        mean_df.rename(columns={bandit_idx: "mean_regret_{}".format(name)}, inplace=True)
+
+    mean_df.rename(columns={n_bandit: "day"}, inplace=True)
+    for bandit_idx, name in enumerate(BANDIT_NAME):
+        std_df.rename(columns={bandit_idx: "std_regret_{}".format(name)}, inplace=True)
+    std_df.rename(columns={n_bandit: "day"}, inplace=True)
+    total_df = mean_df.merge(std_df, left_on="day", right_on="day")
+    total_df.to_csv("{}daily_discrete_regret.csv".format(folder_path_with_date), index=False)
+
+# Compute regret user-wise
+if CSV_DISCRETE_USER_REGRET:
+    total_users = len(total_reward_list[0][0])
+    mean_data = np.zeros(shape=total_users)
+    std_data = np.zeros(shape=total_users)
+
+    for bandit_idx in range(len(BANDIT_NAME)):
+        n_exp = len(total_reward_list[bandit_idx])
+        for user in range(total_users):
+            if user % 1000 == 0:
+                print("User-wise regret {} over {}".format(user, total_users))
+            user_values = []
+            for exp in range(n_exp):
+                user_values.append(optimal_discrete_profit * (user+1) -
+                                   np.array(total_reward_list[bandit_idx][exp][0:user]).sum())
+            mean_data[user] = np.array(user_values).mean()
+            std_data[user] = np.array(user_values).std()
+
+    mean_df = pd.DataFrame(mean_data.transpose())
+    std_df = pd.DataFrame(std_data.transpose())
+    for bandit_idx, name in enumerate(BANDIT_NAME):
+        mean_df.rename(columns={bandit_idx: "mean_regret_{}".format(name)}, inplace=True)
+
+    mean_df.rename(columns={n_bandit: "day"}, inplace=True)
+    for bandit_idx, name in enumerate(BANDIT_NAME):
+        std_df.rename(columns={bandit_idx: "std_regret_{}".format(name)}, inplace=True)
+    std_df.rename(columns={n_bandit: "day"}, inplace=True)
+    total_df = mean_df.merge(std_df, left_on="day", right_on="day")
+    total_df.to_csv("{}discrete_user_regret.csv".format(folder_path_with_date), index=False)
+
+# Compute regret user-wise with real loss
+# TODO optimize 
+if CSV_CONTINUE_USER_REGRET:
+    total_users = len(total_reward_list[0][0])
+    mean_data = np.zeros(total_users)
+    std_data = np.zeros(total_users)
+
+    for bandit_idx in range(len(BANDIT_NAME)):
+        n_exp = len(total_reward_list[bandit_idx])
+        for user in range(total_users):
+            if user % 1000 == 0:
+                print("User-wise regret {} over {}".format(user, total_users))
+            user_values = []
+            for exp in range(n_exp):
+                user_values.append(optimal_mean_reward_user * (user+1) -
+                                   np.array(total_reward_list[bandit_idx][exp][0:user]).sum())
+            mean_data[user] = np.array(user_values).mean()
+            std_data[user] = np.array(user_values).std()
+
+    mean_df = pd.DataFrame(mean_data.transpose())
+    std_df = pd.DataFrame(std_data.transpose())
+    for bandit_idx, name in enumerate(BANDIT_NAME):
+        mean_df.rename(columns={bandit_idx: "mean_regret_{}".format(name)}, inplace=True)
+
+    mean_df.rename(columns={n_bandit: "day"}, inplace=True)
+    for bandit_idx, name in enumerate(BANDIT_NAME):
+        std_df.rename(columns={bandit_idx: "std_regret_{}".format(name)}, inplace=True)
+    std_df.rename(columns={n_bandit: "day"}, inplace=True)
+    total_df = mean_df.merge(std_df, left_on="day", right_on="day")
+    total_df.to_csv("{}cont_user_regret.csv".format(folder_path_with_date), index=False)

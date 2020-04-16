@@ -20,7 +20,6 @@ class UCBLMBandit(DiscreteBandit):
 
         # Additional data structure
         self.arm_values: np.array = arm_values
-        self.max_value: float = np.max(self.arm_values)
         self.round_per_arm: np.array = np.zeros(n_arms)
         self.expected_bernoulli: np.array = np.zeros(n_arms)
         self.upper_bound: np.array = np.ones(n_arms)
@@ -59,20 +58,15 @@ class UCBLMBandit(DiscreteBandit):
         """
         self.t += 1
         self.update_observations(pulled_arm, reward)
-        reward = reward / self.max_value
+        observed_bernoulli = 0 if reward == 0 else 1
 
         # update the number of times the arm has been pulled
         self.round_per_arm[pulled_arm] += 1
 
         # update the expected bernoulli of the pulled arm
-        if reward != 0:
-            self.expected_bernoulli[pulled_arm] = (self.expected_bernoulli[pulled_arm] *
-                                                   (self.round_per_arm[pulled_arm] - 1) +
-                                                   (reward / reward)) / self.round_per_arm[pulled_arm]
-        else:
-            self.expected_bernoulli[pulled_arm] = (self.expected_bernoulli[pulled_arm] *
-                                                   (self.round_per_arm[pulled_arm] - 1)) / self.round_per_arm[
-                                                      pulled_arm]
+        self.expected_bernoulli[pulled_arm] = (self.expected_bernoulli[pulled_arm] *
+                                               (self.round_per_arm[pulled_arm] - 1) +
+                                               observed_bernoulli) / self.round_per_arm[pulled_arm]
 
         # for each arm a, update its upper confidence bound
         for a in range(0, self.n_arms):
@@ -96,5 +90,5 @@ class UCBLMBandit(DiscreteBandit):
             self.upper_bound[a] = min(bound_list)
 
     def get_optimal_arm(self) -> int:
-        expected_rewards = self.expected_bernoulli*self.arm_values
+        expected_rewards = self.expected_bernoulli * self.arm_values
         return int(np.argmax(expected_rewards))

@@ -15,7 +15,7 @@ from utils.experiments_helper import build_discrete_bandit
 from utils.folder_management import handle_folder_creation
 
 # Basic default settings
-N_ROUNDS = 500000
+N_ROUNDS = 100000
 BASIC_OUTPUT_FOLDER = "../report/project_point_4/"
 
 # Pricing settings
@@ -26,6 +26,9 @@ N_ARMS = 10
 DEFAULT_DISCRETIZATION = "UNIFORM"
 FIXED_BUDGET = 1000 / 3
 UNIT_COST = 12
+
+CRP_UPPER_BOUND = 0.3
+GAMMA_EXP_3 = 0.1
 
 
 def get_arguments():
@@ -57,15 +60,13 @@ def get_arguments():
     parser.add_argument("-b", "--bandit_name", help="Name of the bandit to be used in the experiment")
     parser.add_argument("-gamma", "--gamma",
                         help="Parameter for tuning the desire to pick an action uniformly at random",
-                        type=float, default=0.1)
+                        type=float, default=GAMMA_EXP_3)
     parser.add_argument("-crp_ub", "--crp_upper_bound", help="Upper bound of the conversion rate probability",
-                        type=float, default=0.2)
-    parser.add_argument("-a", "--perturbation", help="Parameter for perturbing the history", type=float, default=0.0)
-    parser.add_argument("-l", "--regularization", help="Regularization parameter", type=float, default=0.0)
+                        type=float, default=CRP_UPPER_BOUND)
 
     # Store results
     parser.add_argument("-s", "--save_result", help="Whether to store results or not", type=lambda x: int(x) != 0,
-                        default=0)
+                        default=1)
     parser.add_argument("-o", "--output_folder", default=BASIC_OUTPUT_FOLDER, help="Basic folder where"
                                                                                    "to store the output",
                         type=str)
@@ -166,8 +167,7 @@ if args.save_result:
     fd.write("Discretization type {}\n\n".format(args.discretization))
 
     fd.write("Bandit parameters \n")
-    fd.write("Perturbation parameter (LinPHE; GIRO) {}\n".format(args.perturbation))
-    fd.write("Regularization parameter (LinPHE) {}\n".format(args.regularization))
     fd.write("Gamma parameter (EXP3) {}\n".format(args.gamma))
+    fd.write("CRP Upper bound {}\n".format(args.crp_upper_bound))
 
     fd.close()
