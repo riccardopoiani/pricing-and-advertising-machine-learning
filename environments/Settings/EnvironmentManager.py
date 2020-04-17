@@ -40,8 +40,9 @@ class EnvironmentManager(object):
                                                             lower_bound)), 0)  # function returns positive int numbers
                 else:
                     return lambda x: \
-                        0 if x == 0 else max(int(np.random.normal(np.maximum(np.minimum(coefficient * x + bias, upper_bound), lower_bound),
-                                                 noise_std)), 0)  # function returns positive int numbers
+                        0 if x == 0 else max(int(
+                            np.random.normal(np.maximum(np.minimum(coefficient * x + bias, upper_bound), lower_bound),
+                                             noise_std)), 0)  # function returns positive int numbers
 
             function_info = function_dict["info"]
             fun: IStochasticFunction = BoundedLambdaStochasticFunction(
@@ -85,9 +86,11 @@ class EnvironmentManager(object):
         elif function_dict["type"] == "tanh":
             def tanh_generator_function(coefficient, x_offset, dilation, y_offset):
                 if get_mean_function:
-                    return lambda x: coefficient * np.tanh(x_offset - x/dilation) + y_offset
+                    return lambda x: np.max([0, coefficient *
+                                             np.tanh(x_offset - x / dilation) + y_offset])
                 else:
-                    return lambda x: np.random.binomial(n=1, p=coefficient * np.tanh(x_offset - x/dilation) + y_offset)
+                    return lambda x: np.random.binomial(n=1, p=np.max(
+                        [0, coefficient * np.tanh(x_offset - x / dilation) + y_offset]))
 
             function_info = function_dict["info"]
             fun: IStochasticFunction = BoundedLambdaStochasticFunction(

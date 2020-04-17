@@ -15,21 +15,23 @@ from environments.Settings.Scenario import Scenario
 from utils.folder_management import handle_folder_creation
 from utils.stats.StochasticFunction import IStochasticFunction, AggregatedFunction, MultipliedStochasticFunction
 
-FOLDER_RESULT = "../../report/csv/pricing_bandit/"
+
+SCENARIO_NAME = "linear_visit_tanh_price"
+FOLDER_RESULT = "../../report/csv/pricing_bandit/{}/".format(SCENARIO_NAME)
 
 CSV_DISCRETE_USER_REGRET = True
 CSV_CONTINUE_USER_REGRET = True
 CSV_DAILY_DISCRETE_REGRET = True
 CSV_DAILY_CONT_REGRET = True
 
-SCENARIO_NAME = "linear_scenario"
-N_ARMS_PRICE = 10
+N_ARMS_PRICE = 11
 FIXED_BUDGET = [1000 / 3, 1000 / 3, 1000 / 3]
 PRICE_PLOT_N_POINTS = 100
 ADS_PLOT_N_POINTS = 100
 MIN_PRICE = 15
 MAX_PRICE = 25
 FIXED_COST = 12
+"""
 REWARD_FILE_LIST = ["../../report/project_point_4/Apr16_22-58-37/reward_TS.pkl",
                     "../../report/project_point_4/Apr16_23-06-28/reward_UCB1.pkl",
                     "../../report/project_point_4/Apr16_23-07-18/reward_UCBL.pkl",
@@ -45,6 +47,14 @@ DAYS_FILE_LIST = ["../../report/project_point_4/Apr16_22-58-37/day_TS.pkl",
                   "../../report/project_point_4/Apr16_23-15-33/day_EXP3.pkl"]
 
 BANDIT_NAME = ["TS", "UCB1", "UCBL", "UCB1M", "UCBLM", "EXP3"]
+"""
+REWARD_FILE_LIST = ["../../report/project_point_4/Apr17_18-21-54/reward_TS.pkl"]
+
+DAYS_FILE_LIST = ["../../report/project_point_4/Apr17_18-21-54/day_TS.pkl"]
+
+BANDIT_NAME = ["TS"]
+
+
 
 n_bandit = len(BANDIT_NAME)
 _, folder_path_with_date = handle_folder_creation(result_path=FOLDER_RESULT, retrieve_text_file=False)
@@ -127,7 +137,6 @@ click_function_list: List[IStochasticFunction] = mean_scenario.get_phases()[0].g
 
 context_weight = np.array([f.draw_sample(FIXED_BUDGET[i]) for i, f in enumerate(click_function_list)])
 context_weight = context_weight / context_weight.sum()  # weight to to retrieve the aggregated CRP
-
 aggregated_crp: AggregatedFunction = AggregatedFunction(f_list=crp_function_list, weights=context_weight)
 
 price_point_arr = np.linspace(MIN_PRICE, MAX_PRICE, PRICE_PLOT_N_POINTS)
@@ -203,9 +212,9 @@ optimal_discrete_profit = profit_points.max()
 average_daily_users = np.array([f.draw_sample(FIXED_BUDGET[i]) for i, f in enumerate(click_function_list)]).sum()
 optimal_mean_daily_reward_discrete = optimal_discrete_profit * average_daily_users
 
-print("Optimal mean discrete reward is {}, reached for arm index = {}\n".format(optimal_mean_daily_reward_discrete,
+print("Optimal mean discrete reward is {}, reached for arm index = {}\n".format(optimal_discrete_profit,
                                                                                 profit_points.argmax()))
-print("Optimal mean daily reward is {}, since there are {} daily users".format(optimal_mean_daily_reward,
+print("Optimal mean daily reward is {}, since there are {} daily users".format(optimal_mean_daily_reward_discrete,
                                                                                average_daily_users))
 
 if CSV_DAILY_DISCRETE_REGRET:
