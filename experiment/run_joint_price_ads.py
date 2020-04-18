@@ -49,7 +49,7 @@ INIT_STD: float = 1e6
 DEFAULT_PRICE_BANDIT = "TS"
 MIN_PRICE = 15
 MAX_PRICE = 25
-N_ARMS_PRICE = 10
+N_ARMS_PRICE = 11
 UNIT_COST = 12
 
 # Pricing bandit parameters

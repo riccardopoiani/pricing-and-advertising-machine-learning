@@ -1,11 +1,10 @@
 import os
-import sys
 import pickle
+import sys
 from typing import List
 
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize_scalar
 
 from advertising.data_structure.Campaign import Campaign
 from advertising.optimizers.CampaignOptimizer import CampaignOptimizer
@@ -16,7 +15,7 @@ sys.path.append("../../")
 from environments.Settings.EnvironmentManager import EnvironmentManager
 from environments.Settings.Scenario import Scenario
 from utils.folder_management import handle_folder_creation
-from utils.stats.StochasticFunction import IStochasticFunction, AggregatedFunction, MultipliedStochasticFunction
+from utils.stats.StochasticFunction import IStochasticFunction
 
 FOLDER_RESULT = "../../report/csv/advertising_2/"
 

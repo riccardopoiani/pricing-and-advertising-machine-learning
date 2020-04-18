@@ -27,33 +27,25 @@ CSV_DAILY_CONT_REGRET = True
 N_ARMS_PRICE = 11
 FIXED_BUDGET = [1000 / 3, 1000 / 3, 1000 / 3]
 PRICE_PLOT_N_POINTS = 100
-ADS_PLOT_N_POINTS = 100
 MIN_PRICE = 15
 MAX_PRICE = 25
 FIXED_COST = 12
-"""
-REWARD_FILE_LIST = ["../../report/project_point_4/Apr16_22-58-37/reward_TS.pkl",
-                    "../../report/project_point_4/Apr16_23-06-28/reward_UCB1.pkl",
-                    "../../report/project_point_4/Apr16_23-07-18/reward_UCBL.pkl",
-                    "../../report/project_point_4/Apr16_23-10-28/reward_UCB1M.pkl",
-                    "../../report/project_point_4/Apr16_23-14-22/reward_UCBLM.pkl",
-                    "../../report/project_point_4/Apr16_23-15-33/reward_EXP3.pkl"]
 
-DAYS_FILE_LIST = ["../../report/project_point_4/Apr16_22-58-37/day_TS.pkl",
-                  "../../report/project_point_4/Apr16_23-06-28/day_UCB1.pkl",
-                  "../../report/project_point_4/Apr16_23-07-18/day_UCBL.pkl",
-                  "../../report/project_point_4/Apr16_23-10-28/day_UCB1M.pkl",
-                  "../../report/project_point_4/Apr16_23-14-22/day_UCBLM.pkl",
-                  "../../report/project_point_4/Apr16_23-15-33/day_EXP3.pkl"]
+REWARD_FILE_LIST = ["../../report/project_point_4/Apr17_18-21-54/reward_TS.pkl",
+                    "../../report/project_point_4/Apr17_18-40-58/reward_UCB1.pkl",
+                    "../../report/project_point_4/Apr17_18-47-46/reward_UCBL.pkl",
+                    "../../report/project_point_4/Apr17_20-07-36/reward_UCB1M.pkl",
+                    "../../report/project_point_4/Apr17_21-36-22/reward_UCBLM.pkl",
+                    "../../report/project_point_4/Apr17_18-56-01/reward_EXP3.pkl"]
+
+DAYS_FILE_LIST = ["../../report/project_point_4/Apr17_18-21-54/day_TS.pkl",
+                  "../../report/project_point_4/Apr17_18-40-58/day_UCB1.pkl",
+                  "../../report/project_point_4/Apr17_18-47-46/day_UCBL.pkl",
+                  "../../report/project_point_4/Apr17_20-07-36/day_UCB1M.pkl",
+                  "../../report/project_point_4/Apr17_21-36-22/day_UCBLM.pkl",
+                  "../../report/project_point_4/Apr17_18-56-01/day_EXP3.pkl"]
 
 BANDIT_NAME = ["TS", "UCB1", "UCBL", "UCB1M", "UCBLM", "EXP3"]
-"""
-REWARD_FILE_LIST = ["../../report/project_point_4/Apr17_18-21-54/reward_TS.pkl"]
-
-DAYS_FILE_LIST = ["../../report/project_point_4/Apr17_18-21-54/day_TS.pkl"]
-
-BANDIT_NAME = ["TS"]
-
 
 
 n_bandit = len(BANDIT_NAME)
