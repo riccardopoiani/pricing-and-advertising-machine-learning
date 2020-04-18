@@ -91,10 +91,11 @@ class JointBanditBalanced(IJointBandit):
             solution = np.min(rewards_len / user_probabilities)
             balanced_rewards_len = np.array(np.floor(solution * user_probabilities), dtype=int)
 
-            for sub_idx in range(self.campaign.get_n_sub_campaigns()):
-                if balanced_rewards_len[sub_idx] <= 0:
-                    continue
+            # Clip values of balanced rewards length between 0 and original rewards length
+            balanced_rewards_len = np.maximum(balanced_rewards_len, 0)
+            balanced_rewards_len = np.minimum(balanced_rewards_len, rewards_len)
 
+            for sub_idx in range(self.campaign.get_n_sub_campaigns()):
                 sampled_rewards = np.random.choice(rewards_per_subcampaign[sub_idx],
                                                    size=balanced_rewards_len[sub_idx],
                                                    replace=False)
