@@ -110,7 +110,7 @@ def main(args):
                 iterate = not env.next_day()
 
         # Update bandit
-        bandit.update(pulled_arm=price_idx, reward=reward)
+        bandit.update(pulled_arm=price_idx, observed_reward=reward)
 
     return bandit.collected_rewards, env.get_day_breakpoints()
 

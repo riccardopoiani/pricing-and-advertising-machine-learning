@@ -31,6 +31,9 @@ SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "res
 CUM_BUDGET = 1000
 N_ARMS = 11
 
+CD_THRESHOLD = 0.1
+CD_GAMMA = 0.1
+
 
 def get_arguments():
     """
@@ -66,9 +69,9 @@ def get_arguments():
     parser.add_argument("-sw", "--sw_size", help="Size of the sliding window for SW bandits", type=int)
     parser.add_argument("-gamma", "--gamma",
                         help="Controls the fraction of the uniform sampling over the number of arms",
-                        type=float, default=0.1)
+                        type=float, default=CD_GAMMA)
     parser.add_argument("-cd_threshold", "--cd_threshold", help="Threshold used for change detection",
-                        type=float, default=0.1)
+                        type=float, default=CD_THRESHOLD)
 
     # Store results
     parser.add_argument("-s", "--save_result", help="Whether to store results or not", type=lambda x: int(x) != 0,

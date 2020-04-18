@@ -33,16 +33,16 @@ class SWCombinatorialBandit(CombinatorialBandit):
             self.pulled_arm_sub_campaign[i].append(pulled_arm[i])
             self.collected_rewards_sub_campaign[i].append(reward[i])
 
-    def update(self, pulled_arm: List[int], reward: List[float]) -> None:
+    def update(self, pulled_arm: List[int], observed_reward: List[float]) -> None:
         """
         Update observations and models of the sub-campaign
 
         :param pulled_arm: list of indices of the pulled arms (i.e. superarm pulled)
-        :param reward: list of observed reward for each pulled arm
+        :param observed_reward: list of observed reward for each pulled arm
         :return: None
         """
         self.t += 1
-        self.update_observations(pulled_arm, reward)
+        self.update_observations(pulled_arm, observed_reward)
         for sub_index, model in enumerate(self.model_list):
             model.fit_model(collected_rewards=self.collected_rewards_sub_campaign[sub_index][-self.sw_size:],
                             pulled_arm_history=self.pulled_arm_sub_campaign[sub_index][-self.sw_size:])

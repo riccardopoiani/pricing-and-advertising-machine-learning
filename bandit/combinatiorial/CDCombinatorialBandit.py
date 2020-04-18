@@ -48,16 +48,16 @@ class CDCombinatorialBandit(CombinatorialBandit):
             self.last_sw_arm_rewards[i][pulled_arm[i]][-1] = reward[i]
             self.count_arm_after_detection[i][pulled_arm[i]] += 1
 
-    def update(self, pulled_arm: List[int], reward: List[float]) -> None:
+    def update(self, pulled_arm: List[int], observed_reward: List[float]) -> None:
         """
         Update observations and models of the sub-campaign
 
         :param pulled_arm: list of indices of the pulled arms (i.e. superarm pulled)
-        :param reward: list of observed reward for each pulled arm
+        :param observed_reward: list of observed reward for each pulled arm
         :return: None
         """
         self.t += 1
-        self.update_observations(pulled_arm, reward)
+        self.update_observations(pulled_arm, observed_reward)
 
         campaign_mask = self._change_detection()
         self.last_detection_time[campaign_mask] = self.t - 1

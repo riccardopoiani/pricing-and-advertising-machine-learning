@@ -104,7 +104,7 @@ def build_combinatorial_bandit(bandit_name: str, campaign: Campaign, init_std, a
             DiscreteGPRegressor(list(campaign.get_budgets()), init_std, args.alpha, args.n_restart_opt,
                                 normalized=True)
             for _ in range(campaign.get_n_sub_campaigns())]
-        bandit = CDCombinatorialBandit(campaign=campaign, model_list=model_list, n_arms=args.n_arms_ads,
+        bandit = CDCombinatorialBandit(campaign=campaign, model_list=model_list, n_arms=args.n_arms,
                                        gamma=args.gamma, cd_threshold=args.cd_threshold, sw_size=args.sw_size)
     else:
         raise argparse.ArgumentError("The name of the bandit to be used is not in the available ones")
