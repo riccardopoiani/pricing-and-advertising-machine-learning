@@ -17,7 +17,7 @@ from environments.Settings.EnvironmentManager import EnvironmentManager
 from utils.folder_management import handle_folder_creation
 
 # Basic default settings
-N_DAYS = 7 * 14
+N_DAYS = 100
 CONFIDENCE = 0.1
 CONTEXT_GENERATION_FREQUENCY = 7
 BASIC_OUTPUT_FOLDER = "../report/project_point_5/"
@@ -26,7 +26,7 @@ BASIC_OUTPUT_FOLDER = "../report/project_point_5/"
 SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "resources"
 MIN_PRICE = 15
 MAX_PRICE = 25
-N_ARMS = 5
+N_ARMS = 11
 DEFAULT_DISCRETIZATION = "UNIFORM"
 FIXED_BUDGET = 1000 / 3
 UNIT_COST = 12
@@ -113,12 +113,9 @@ def main(args, id):
             reward, _ = env.round(price=prices[price_idx])
             reward = reward * arm_profit[price_idx]
             # Update bandit
-            bandit.update(min_context=user_min_context, pulled_arm=price_idx, bernoulli_sample=reward)
+            bandit.update(min_context=user_min_context, pulled_arm=price_idx, reward=reward)
         bandit.next_day()
         env.next_day()
-        if i % 7 == 0:
-            print("id: {}, day: {}, structure: {}".format(id, i, bandit.context_structure))
-
     return bandit.collected_rewards, env.get_day_breakpoints(), bandit.context_structure
 
 
@@ -197,7 +194,7 @@ if args.save_result:
     # Plot cumulative regret and instantaneous reward
     daily_rewards = np.zeros(shape=(args.n_runs, args.n_days), dtype=np.float)
     for exp in range(args.n_runs):
-        for day in range(0, len(day_breakpoint[exp] - 1)):
+        for day in range(0, len(day_breakpoint[exp]) - 1):
             daily_rewards[exp, day] = np.sum(rewards[exp][day_breakpoint[exp][day]: day_breakpoint[exp][day + 1]])
 
     # Calculates optimal rewards (for clairvoyant algorithm)

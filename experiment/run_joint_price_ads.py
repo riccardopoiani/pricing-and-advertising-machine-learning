@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed
 
+from bandit.joint.JointBanditDiscriminatoryImproved import JointBanditDiscriminatoryImproved
+
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
@@ -148,6 +150,10 @@ def get_bandit(args, arm_values: np.array, campaign: Campaign) -> IJointBandit:
     if bandit_name in ["JBExp", "JBExpV", "JBQV", "JBQ"]:
         bandit = JointBanditDiscriminatory(ads_learner=ads_bandit, price_learner=price_bandit_list, campaign=campaign,
                                            ad_value_strategy=ad_value_strategy, is_learn_visits=is_learn_visits)
+    elif bandit_name in ["JBIExp", "JBIQ"]:
+        bandit = JointBanditDiscriminatoryImproved(ads_learner=ads_bandit, price_learner=price_bandit_list,
+                                                   campaign=campaign,
+                                                   ad_value_strategy=ad_value_strategy)
     elif bandit_name in ["JBBQ", "JBBExp"]:
         model_list: List[DiscreteRegressor] = [
             DiscreteGPRegressor(list(campaign.get_budgets()), args.init_std, args.alpha, args.n_restart_opt,
@@ -181,14 +187,11 @@ def get_bandit(args, arm_values: np.array, campaign: Campaign) -> IJointBandit:
 
 def learn_per_user(bandit, env, campaign, prices, arm_profit):
     for _ in range(0, args.n_days):
-        # Fix budget
-        elapsed_day = False
-
         # Fix the price and simulate the day
         curr_budget_idx = bandit.pull_budget()
         curr_budget = [int(campaign.get_budgets()[i]) for i in curr_budget_idx]
         env.set_budget_allocation(budget_allocation=curr_budget)
-        env.next_day()
+        elapsed_day = not env.next_day()
 
         while not elapsed_day:
             # Retrieve user class
