@@ -29,11 +29,11 @@ ADS_PLOT_N_POINTS = 100
 MIN_PRICE = 15
 MAX_PRICE = 25
 FIXED_COST = 12
-REWARD_FILE_LIST = ["../../report/project_point_2/Apr17_17-09-39/reward_GPBandit.pkl"]
-#                    "../../report/project_point_2/Apr17_17-09-39/reward_GaussianBandit.pkl"]
+REWARD_FILE_LIST = ["../../report/project_point_2/Apr17_17-09-39/reward_GPBandit.pkl",
+                    "../../report/project_point_2/Apr24_14-15-39/reward_GaussianBandit.pkl"]
 
-BANDIT_NAME = ["GPBandit"]
-# BANDIT_NAME = ["GPBandit", "GaussianBandit"]
+#BANDIT_NAME = ["GPBandit"]
+BANDIT_NAME = ["GPBandit", "GaussianBandit"]
 
 n_bandit = len(BANDIT_NAME)
 _, folder_path_with_date = handle_folder_creation(result_path=FOLDER_RESULT, retrieve_text_file=False)

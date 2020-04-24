@@ -15,10 +15,20 @@ class DiscreteGaussianRegressor(DiscreteRegressor):
         if len(collected_rewards) == 0 or len(pulled_arm_history) == 0:
             self.reset_parameters()
         else:
+            # for arm in range(len(self.arms)):
+            #     arm_index = np.where(pulled_arm_history == arm)
+            #     self.means[arm] = collected_rewards[arm_index].mean()
+            #     self.sigmas[arm] = collected_rewards[arm_index].std()
+
+            # below works for point 2
             for arm in range(len(self.arms)):
-                arm_index = np.where(pulled_arm_history == arm)
-                self.means[arm] = collected_rewards[arm_index].mean()
-                self.sigmas[arm] = collected_rewards[arm_index].std()
+                arm_index = np.where(np.array(pulled_arm_history) == arm)[0]
+                if len(arm_index) == 0:
+                    pass
+                else:
+                    arm_index = arm_index[0]
+                    self.means[arm] = np.array(collected_rewards[arm_index]).mean()
+                    self.sigmas[arm] = np.array(collected_rewards[arm_index]).std()
 
     def sample_distribution(self):
         return np.random.normal(self.means, self.sigmas)
