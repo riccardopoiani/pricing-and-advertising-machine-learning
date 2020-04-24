@@ -134,7 +134,7 @@ def get_prices(args):
 
 
 def get_bandit(args, arm_values: np.array, campaign: Campaign) -> IJointBandit:
-    bandit_name = args.joint_bandit_name
+    bandit_name: str = args.joint_bandit_name
     ads_bandit = build_combinatorial_bandit(bandit_name=args.ads_bandit_name, campaign=campaign,
                                             init_std=args.init_std, args=args)
     price_bandit_class, price_bandit_kwargs = get_bandit_class_and_kwargs(bandit_name=args.pricing_bandit_name,
@@ -144,13 +144,13 @@ def get_bandit(args, arm_values: np.array, campaign: Campaign) -> IJointBandit:
                          for _ in range(campaign.get_n_sub_campaigns())]
 
     ad_value_strategy = ExpectationAdValueStrategy(np.max(arm_values)) \
-        if bandit_name in ["JBExpV", "JBExp", "JBBExp"] else QuantileAdValueStrategy(np.max(arm_values), args.min_std_q)
-    is_learn_visits = True if bandit_name in ["JBExpV", "JBQV"] else False
+        if bandit_name.find("Exp") >= 0 else QuantileAdValueStrategy(np.max(arm_values), args.min_std_q)
+    is_learn_visits = True if bandit_name[-1] == 'V' else False
 
     if bandit_name in ["JBExp", "JBExpV", "JBQV", "JBQ"]:
         bandit = JointBanditDiscriminatory(ads_learner=ads_bandit, price_learner=price_bandit_list, campaign=campaign,
                                            ad_value_strategy=ad_value_strategy, is_learn_visits=is_learn_visits)
-    elif bandit_name in ["JBIExp", "JBIQ"]:
+    elif bandit_name in ["JBIExpV", "JBIQV"]:
         bandit = JointBanditDiscriminatoryImproved(ads_learner=ads_bandit, price_learner=price_bandit_list,
                                                    campaign=campaign,
                                                    ad_value_strategy=ad_value_strategy)

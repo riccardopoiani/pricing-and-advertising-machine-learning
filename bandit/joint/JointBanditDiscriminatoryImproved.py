@@ -1,7 +1,5 @@
 from typing import List
 
-import numpy as np
-
 from advertising.data_structure.Campaign import Campaign
 from bandit.combinatiorial.CombinatorialBandit import CombinatorialBandit
 from bandit.discrete.DiscreteBandit import DiscreteBandit

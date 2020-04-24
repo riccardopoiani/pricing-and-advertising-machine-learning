@@ -33,9 +33,10 @@ REWARD_FILE_LIST = ["../../report/project_point_6_7/Apr19_20-07-24/total_reward_
                     "../../report/project_point_6_7/Apr19_16-33-15/total_reward_JBExp.pkl",
                     "../../report/project_point_6_7/Apr20_14-36-58/total_reward_JBQV.pkl",
                     "../../report/project_point_6_7/Apr19_21-00-07/total_reward_JBExpV.pkl",
-                    "../../report/project_point_6_7/Apr20_21-21-01/total_reward_JBIQ.pkl"]
+                    "../../report/project_point_6_7/Apr20_21-21-01/total_reward_JBIQV.pkl",
+                    "../../report/project_point_6_7/Apr24_14-59-53/total_reward_JBIExpV.pkl"]
 
-BANDIT_NAME = ["JBQ", "JBExp", "JBQV", "JBExpV", "JBIQ"]
+BANDIT_NAME = ["JBQ", "JBExp", "JBQV", "JBExpV", "JBIQV", "JBIExpV"]
 
 n_bandit = len(BANDIT_NAME)
 _, folder_path_with_date = handle_folder_creation(result_path=FOLDER_RESULT, retrieve_text_file=False)

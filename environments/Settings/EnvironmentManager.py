@@ -106,28 +106,6 @@ class EnvironmentManager(object):
         return fun
 
     @classmethod
-    def get_crps_for_prices(cls, scenario_name: str, prices: List[float]) -> List[List[float]]:
-        scenario_folder = get_resource_folder_path()
-        scenario_json_file_path = os.path.join(scenario_folder, scenario_name + ".json")
-
-        def get_crps_for_params(coefficient, min_price, max_crp, price: float):
-            return np.max([0, coefficient * (-price + min_price) + max_crp])
-
-        with open(scenario_json_file_path) as json_file:
-            data: dict = json.load(json_file)
-            data_phases: List = data["phases"]
-            crps_per_phase: List[List[float]] = []
-            for i, phase_dict in enumerate(data_phases):
-                crps: List[float] = []
-                for j, crp_dict in enumerate(phase_dict["crp_functions"]):
-                    crp_dict = crp_dict["info"]
-                    price = prices[j]
-                    p = get_crps_for_params(crp_dict["coefficient"], crp_dict["min_price"], crp_dict["max_crp"], price)
-                    crps.append(p)
-                crps_per_phase.append(crps)
-            return crps_per_phase
-
-    @classmethod
     def load_scenario(cls, scenario_name: str, verbose=False, get_mean_function=False) -> Scenario:
         """
         Load a scenario on the basis of its name

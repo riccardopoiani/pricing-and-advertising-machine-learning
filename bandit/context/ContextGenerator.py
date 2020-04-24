@@ -1,5 +1,5 @@
 import itertools
-from typing import Dict, Tuple, List, Set, Optional
+from typing import Dict, Tuple, List, Optional
 import numpy as np
 
 from bandit.discrete.DiscreteBandit import DiscreteBandit
@@ -41,9 +41,11 @@ class ContextGenerator(object):
         :param confidence: the confidence for the calculation of lower bound
         :param min_context_to_rewards_dict: a dictionary from min-context to list of rewards
         """
+        assert "arm_values" in bandit_kwargs.keys(), "The parameter arm_values is not in bandit_kwargs"
+
         self.n_features: int = n_features
         self.confidence: float = confidence
-        self.max_arm_value: float = np.max(bandit_kwargs["arm_values"])
+        self.arm_values = bandit_kwargs["arm_values"]
         self.min_context_to_rewards_dict: Dict[Tuple[int, ...], List[float]] = min_context_to_rewards_dict
         self.min_context_to_pulled_arm_dict: Dict[Tuple[int, ...], List[int]] = min_context_to_pulled_arm_dict
         self.bandit_class: DiscreteBandit.__class__ = bandit_class
@@ -144,14 +146,11 @@ class ContextGenerator(object):
             # Collect rewards and best rewards for each context (c_0, c_1 and c_total)
             rewards_0 = self._get_rewards_per_selected_features(selected_features + [(feature_idx, 0)])
             rewards_1 = self._get_rewards_per_selected_features(selected_features + [(feature_idx, 1)])
-            best_rewards_0 = self._get_best_rewards_by_training_bandit(selected_features + [(feature_idx, 0)])
-            best_rewards_1 = self._get_best_rewards_by_training_bandit(selected_features + [(feature_idx, 1)])
+            best_rewards_0 = self._get_best_rewards_by_training_bandit(selected_features +
+                                                                       [(feature_idx, 0)])
+            best_rewards_1 = self._get_best_rewards_by_training_bandit(selected_features +
+                                                                       [(feature_idx, 1)])
             best_rewards_total = self._get_best_rewards_by_training_bandit(selected_features)
-
-            # Max-min normalize the best rewards (min = 0, max = max(all_rewards)
-            best_rewards_0 = np.array(best_rewards_0) / self.max_arm_value
-            best_rewards_1 = np.array(best_rewards_1) / self.max_arm_value
-            best_rewards_total = np.array(best_rewards_total) / self.max_arm_value
 
             lower_bound_p0 = self._get_hoeffding_lower_bound(len(rewards_0) / (len(rewards_0) + len(rewards_1)),
                                                              self.confidence, len(rewards_0) + len(rewards_1))
@@ -159,15 +158,18 @@ class ContextGenerator(object):
                                                              self.confidence, len(rewards_0) + len(rewards_1))
 
             lower_bound_v0 = self._get_hoeffding_lower_bound(np.mean(best_rewards_0),
-                                                             self.confidence, len(best_rewards_0))
+                                                             self.confidence, len(best_rewards_0),
+                                                             np.max(best_rewards_0))
             lower_bound_v1 = self._get_hoeffding_lower_bound(np.mean(best_rewards_1),
-                                                             self.confidence, len(best_rewards_1))
+                                                             self.confidence, len(best_rewards_1),
+                                                             np.max(best_rewards_1))
 
             context_value = lower_bound_p0 * lower_bound_v0 + lower_bound_p1 * lower_bound_v1
             context_values.append(context_value)
 
             lower_bound_current_context = self._get_hoeffding_lower_bound(np.mean(best_rewards_total),
-                                                                          self.confidence, len(best_rewards_total))
+                                                                          self.confidence, len(best_rewards_total),
+                                                                          np.max(best_rewards_total))
             lower_bound_current_context_list.append(lower_bound_current_context)
 
         for i in range(len(lower_bound_current_context_list)):
@@ -192,7 +194,7 @@ class ContextGenerator(object):
             return None
 
     @classmethod
-    def _get_hoeffding_lower_bound(cls, mean, confidence, cardinality) -> float:
+    def _get_hoeffding_lower_bound(cls, mean, confidence, cardinality, bound_normalize_multiplier=1) -> float:
         """
         Return the value of the lower bound given by Hoeffding
 
@@ -203,7 +205,7 @@ class ContextGenerator(object):
         """
         if cardinality == 0:
             return -np.inf
-        return mean - np.sqrt(-np.log(confidence) / (2 * cardinality))
+        return mean - bound_normalize_multiplier * np.sqrt(-np.log(confidence) / (2 * cardinality))
 
     def _get_best_rewards_by_training_bandit(self, selected_features: List[Tuple[int, int]]) -> List[float]:
         """
@@ -212,7 +214,7 @@ class ContextGenerator(object):
         related information of that context and ask the bandit the optimal arm
 
         :param selected_features: the list of tuple of (feature_idx, value) that represents the features already fixed
-        :return: the list of best rewards related to the selected features
+        :return: the list of best rewards related to the selected features and the index of the optimal arm
         """
         bandit: DiscreteBandit = self.bandit_class(**self.bandit_kwargs)
         rewards = self._get_rewards_per_selected_features(selected_features)
@@ -221,7 +223,8 @@ class ContextGenerator(object):
             arm = pulled_arms[i]
             reward = rewards[i]
             bandit.update(arm, reward)
-        best_rewards = bandit.rewards_per_arm[bandit.get_optimal_arm()]
+        optimal_arm = bandit.get_optimal_arm()
+        best_rewards = bandit.rewards_per_arm[optimal_arm]
         return best_rewards.copy()
 
     def _get_rewards_per_selected_features(self, selected_features: List[Tuple[int, int]]) -> List[float]:
@@ -273,7 +276,7 @@ class ContextGenerator(object):
             context_per_features.append(tuple(min_context))
             return context_per_features
 
-        for combination in list(itertools.product([0, 1], repeat=self.n_features-len(selected_features))):
+        for combination in list(itertools.product([0, 1], repeat=self.n_features - len(selected_features))):
             min_context = np.full(shape=self.n_features, fill_value=-1)
             for feature_idx, feature_value in selected_features:
                 min_context[feature_idx] = feature_value

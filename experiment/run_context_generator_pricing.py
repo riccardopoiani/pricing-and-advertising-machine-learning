@@ -8,22 +8,24 @@ import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed
 
+from bandit.context.ContextualBandit import ContextualBandit
+
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
-from utils.experiments_helper import build_contextual_bandit
+from utils.experiments_helper import get_bandit_class_and_kwargs
 from environments.GeneralEnvironment import PricingAdvertisingJointEnvironment
 from environments.Settings.EnvironmentManager import EnvironmentManager
 from utils.folder_management import handle_folder_creation
 
 # Basic default settings
 N_DAYS = 100
-CONFIDENCE = 0.1
+CONFIDENCE = 0.01
 CONTEXT_GENERATION_FREQUENCY = 7
 BASIC_OUTPUT_FOLDER = "../report/project_point_5/"
 
 # Pricing settings
-SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "resources"
+SCENARIO_NAME = "linear_visit_tanh_price"  # corresponds to the name of the file in "resources"
 MIN_PRICE = 15
 MAX_PRICE = 25
 N_ARMS = 11
@@ -81,6 +83,24 @@ def get_arguments():
     return parser.parse_args()
 
 
+def get_bandit(bandit_name, n_arms, arm_values, n_features, context_generation_frequency, args):
+    """
+    Retrieve the bandit to be used in the experiment according to the bandit name
+
+    :param bandit_name:
+    :param n_arms:
+    :param arm_values: values of each arm
+    :param n_features: number of user features
+    :param context_generation_frequency:
+    :param args: command line arguments
+    :return: bandit that will be used to carry out the experiment
+    """
+    bandit_class, bandit_kwargs = get_bandit_class_and_kwargs(bandit_name, n_arms, arm_values, args)
+    bandit = ContextualBandit(n_features, args.confidence, context_generation_frequency, bandit_class,
+                              **bandit_kwargs)
+    return bandit
+
+
 def get_prices(args):
     if args.discretization == "UNIFORM":
         return np.linspace(start=MIN_PRICE, stop=MAX_PRICE, num=args.n_arms)
@@ -88,16 +108,16 @@ def get_prices(args):
         raise NotImplemented("Not implemented discretization method")
 
 
-def main(args, id):
+def main(args):
     scenario = EnvironmentManager.load_scenario(args.scenario_name)
     env = PricingAdvertisingJointEnvironment(scenario)
     env.set_budget_allocation([args.budget] * scenario.get_n_subcampaigns())
 
     prices = get_prices(args=args)
     arm_profit = prices - args.unit_cost
-    bandit = build_contextual_bandit(bandit_name=args.bandit_name, n_arms=len(arm_profit),
-                                     arm_values=prices, n_features=scenario.get_n_user_features(),
-                                     context_generation_frequency=args.context_gen_freq, args=args)
+    bandit = get_bandit(bandit_name=args.bandit_name, n_arms=len(arm_profit),
+                        arm_values=arm_profit, n_features=scenario.get_n_user_features(),
+                        context_generation_frequency=args.context_gen_freq, args=args)
 
     env.next_day()
 
@@ -131,7 +151,7 @@ def run(id, seed, args):
     # Eventually fix here the seeds for additional sources of randomness (e.g. tensorflow)
     np.random.seed(seed)
     print("Starting run {}".format(id))
-    rewards, day_breakpoints, context_structures = main(args=args, id=id)
+    rewards, day_breakpoints, context_structures = main(args=args)
     print("Done run {}".format(id))
     return rewards, day_breakpoints, context_structures
 
@@ -199,34 +219,7 @@ if args.save_result:
 
     # Calculates optimal rewards (for clairvoyant algorithm)
     rewards = np.mean(daily_rewards, axis=0)
-    scenario = EnvironmentManager.load_scenario(args.scenario_name)
-    env = PricingAdvertisingJointEnvironment(scenario)
-    clicks_per_subcampaign = scenario.get_phases()[0].get_all_n_clicks_sample([args.budget] * scenario.get_n_subcampaigns())
-    total_revenue_per_price = np.zeros(shape=(args.n_arms, scenario.get_n_subcampaigns()))
-    for i, price in enumerate(get_prices(args)):
-        crps = EnvironmentManager.get_crps_for_prices(args.scenario_name, [price] * scenario.get_n_subcampaigns())[0]
-        revenue = np.array(crps) * price
-        total_revenue = np.array(clicks_per_subcampaign) * revenue
-        total_revenue_per_price[i, :] = total_revenue
-
-    opt_reward = np.sum(np.max(total_revenue_per_price, axis=0))
-
-    avg_regrets = []
-    for reward in rewards:
-        # The clairvoyant algorithm reward is the best reward he can get by sampling the environment
-        # from the best context allocation
-        avg_regrets.append(opt_reward - reward)
-    cum_regrets = np.cumsum(avg_regrets)
-
     os.chdir(folder_path_with_date)
-
-    plt.figure(0)
-    plt.plot(cum_regrets, 'r')
-    plt.xlabel("t")
-    plt.ylabel("Cumulative Regret")
-    plt.suptitle("Context Generation - REGRET")
-    plt.title(str(args.n_runs) + " Experiments - " + str(args.bandit_name))
-    plt.savefig(fname="Regret.png", format="png")
 
     plt.figure(1)
     plt.plot(rewards, 'g')
