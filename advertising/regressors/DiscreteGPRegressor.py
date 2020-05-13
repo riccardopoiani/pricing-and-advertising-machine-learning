@@ -13,7 +13,7 @@ class DiscreteGPRegressor(DiscreteRegressor):
     def __init__(self, arms, init_std_dev=1e3, alpha: float = 10, n_restarts_optimizer: int = 10,
                  normalized: bool = True):
         if normalized:
-            arms = arms / np.max(arms)
+            arms = (arms - np.min(arms)) / (np.max(arms) - np.min(arms))
         super().__init__(arms, init_std_dev)
 
         self.kernel: Product = C(1.0, (1e-8, 1e8)) * RBF(1.0, (1e-8, 1e8))
