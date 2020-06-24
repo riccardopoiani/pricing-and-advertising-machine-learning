@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from bandit.context.ContextGenerator import ContextGenerator
+from bandit.context.ContextGenerator import GreedyContextGenerator
 from bandit.discrete.UCB1Bandit import UCB1Bandit
 
 
@@ -16,9 +16,9 @@ class ContextGeneratorTestCase(unittest.TestCase):
                                            (1, 0): [2, 2, 3, 3, 3],
                                            (1, 1): [2, 2, 3, 3, 3]}
 
-        self.context_generator_2 = ContextGenerator(2, 0.95, min_context_to_rewards_dict,
-                                                    min_context_to_pulled_arms_dict, UCB1Bandit, n_arms=10,
-                                                    arm_values=np.linspace(0, 1, 10))
+        self.context_generator_2 = GreedyContextGenerator(2, 0.95, min_context_to_rewards_dict,
+                                                          min_context_to_pulled_arms_dict, UCB1Bandit, n_arms=10,
+                                                          arm_values=np.linspace(0, 1, 10))
 
         min_context_to_rewards_dict = {(0, 0): [100, 100, 200, 200, 200],
                                        (0, 1): [100, 100, 200, 200, 200],
@@ -29,9 +29,9 @@ class ContextGeneratorTestCase(unittest.TestCase):
                                            (1, 0): [2, 2, 3, 3, 3, 1, 1, 1],
                                            (1, 1): [2, 2, 3, 3, 3, 1, 1, 1]}
 
-        self.context_generator_2_1 = ContextGenerator(2, 0.95, min_context_to_rewards_dict,
-                                                      min_context_to_pulled_arms_dict, UCB1Bandit, n_arms=10,
-                                                      arm_values=np.linspace(0, 1, 10))
+        self.context_generator_2_1 = GreedyContextGenerator(2, 0.95, min_context_to_rewards_dict,
+                                                            min_context_to_pulled_arms_dict, UCB1Bandit, n_arms=10,
+                                                            arm_values=np.linspace(0, 1, 10))
 
     def test_generate_context_per_all_features(self):
         selected_features = [(0, 1,), (1, 0,)]
