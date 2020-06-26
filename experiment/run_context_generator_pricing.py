@@ -8,7 +8,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed
 
+from bandit.context.BruteforceContextGenerator import BruteforceContextGenerator
 from bandit.context.ContextualBandit import ContextualBandit
+from bandit.context.GreedyContextGenerator import GreedyContextGenerator
 
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
@@ -22,10 +24,11 @@ from utils.folder_management import handle_folder_creation
 N_DAYS = 100
 CONFIDENCE = 0.01
 CONTEXT_GENERATION_FREQUENCY = 7
+CONTEXT_GENERATION_NAME = "GCG"
 BASIC_OUTPUT_FOLDER = "../report/project_point_5/"
 
 # Pricing settings
-SCENARIO_NAME = "linear_visit_tanh_price"  # corresponds to the name of the file in "resources"
+SCENARIO_NAME = "one_class_scenario"  # corresponds to the name of the file in "resources"
 MIN_PRICE = 15
 MAX_PRICE = 25
 N_ARMS = 11
@@ -46,6 +49,8 @@ def get_arguments():
     parser.add_argument("-conf", "--confidence", help="Confidence for Hoeffding bound", type=float, default=CONFIDENCE)
     parser.add_argument("-freq", "--context_gen_freq", help="Context generation frequency", type=int,
                         default=CONTEXT_GENERATION_FREQUENCY)
+    parser.add_argument("-cgn", "--context_gen_name", help="Context generation name", type=str,
+                        default=CONTEXT_GENERATION_NAME)
     parser.add_argument("-d", "--discretization", help="Discretization type", type=str, default=DEFAULT_DISCRETIZATION)
     parser.add_argument("-c", "--unit_cost", help="Unit cost for each sold unit", type=float, default=UNIT_COST)
 
@@ -83,21 +88,30 @@ def get_arguments():
     return parser.parse_args()
 
 
-def get_bandit(bandit_name, n_arms, arm_values, n_features, context_generation_frequency, args):
+def get_bandit(bandit_name, n_arms, arm_values, n_features, context_generation_frequency,
+               context_generator_name, args):
     """
     Retrieve the bandit to be used in the experiment according to the bandit name
 
-    :param bandit_name:
-    :param n_arms:
+    :param bandit_name: name of the bandit to use
+    :param n_arms: number of arms of the bandit
     :param arm_values: values of each arm
     :param n_features: number of user features
-    :param context_generation_frequency:
+    :param context_generation_frequency: the frequency in days of the context generation
+    :param context_generator_name: name of the context generator to use
     :param args: command line arguments
     :return: bandit that will be used to carry out the experiment
     """
     bandit_class, bandit_kwargs = get_bandit_class_and_kwargs(bandit_name, n_arms, arm_values, args)
-    bandit = ContextualBandit(n_features, args.confidence, context_generation_frequency, bandit_class,
-                              **bandit_kwargs)
+    if context_generator_name == "GCG":
+        context_generator_class = GreedyContextGenerator
+    elif context_generator_name == "BCG":
+        context_generator_class = BruteforceContextGenerator
+    else:
+        raise argparse.ArgumentError("The name of the context generator to be used is not in the available ones")
+
+    bandit = ContextualBandit(n_features, args.confidence, context_generation_frequency, context_generator_class,
+                              bandit_class, **bandit_kwargs)
     return bandit
 
 
@@ -117,7 +131,8 @@ def main(args):
     arm_profit = prices - args.unit_cost
     bandit = get_bandit(bandit_name=args.bandit_name, n_arms=len(arm_profit),
                         arm_values=arm_profit, n_features=scenario.get_n_user_features(),
-                        context_generation_frequency=args.context_gen_freq, args=args)
+                        context_generation_frequency=args.context_gen_freq,
+                        context_generator_name=args.context_gen_name, args=args)
 
     env.next_day()
 
@@ -135,6 +150,8 @@ def main(args):
             # Update bandit
             bandit.update(min_context=user_min_context, pulled_arm=price_idx, reward=reward)
         bandit.next_day()
+        #if i % 7 == 0:
+        #    print(bandit.context_structure)
         env.next_day()
     return bandit.collected_rewards, env.get_day_breakpoints(), bandit.context_structure
 

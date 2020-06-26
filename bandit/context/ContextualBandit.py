@@ -4,7 +4,7 @@ from typing import Dict, Tuple, List
 
 import numpy as np
 
-from bandit.context.ContextGenerator import ContextGenerator
+from bandit.context.AbstractContextGenerator import AbstractContextGenerator
 from bandit.discrete.DiscreteBandit import DiscreteBandit
 
 
@@ -23,17 +23,20 @@ class ContextualBandit(object):
     """
 
     def __init__(self, n_features: int, confidence: float, context_generation_frequency: int,
-                 bandit_class: DiscreteBandit.__class__, **bandit_kwargs):
+                 context_generator_class: AbstractContextGenerator.__class__, bandit_class: DiscreteBandit.__class__,
+                 **bandit_kwargs):
         """
         :param n_features: number of features known for each user (has to be the same for every user)
         :param confidence: confidence of the context generation algorithm used to calculate lower bounds
         :param context_generation_frequency: the frequency (in day) for the context generation algorithm
+        :param context_generator_class: the class of the context generator to use
         :param bandit_class: the class of the bandit to use
         :param bandit_kwargs: the parameters of the bandit class
         """
         # data structure that maps min contexts into bandits
         self.min_context_to_bandit_dict: Dict[Tuple[int, ...], DiscreteBandit] = {}
         self.frequency_context_generation: int = context_generation_frequency
+        self.context_generator_class = context_generator_class
         self.confidence: float = confidence
         self.n_features: int = n_features
         self.bandit_class = bandit_class
@@ -102,10 +105,11 @@ class ContextualBandit(object):
                 rewards_per_feature[min_context] = list(np.array(self.collected_rewards.copy())[indices])
                 pulled_arms_per_feature[min_context] = list(np.array(self.pulled_arm_list.copy())[indices])
 
-            context_generator = ContextGenerator(self.n_features, self.confidence, rewards_per_feature,
-                                                 pulled_arms_per_feature, self.bandit_class, **self.bandit_kwargs)
-            self.context_structure_tree = context_generator.update_context_structure_tree(self.context_structure_tree)
-            self.context_structure = context_generator.get_context_structure_from_tree(self.context_structure_tree)
+            context_generator = self.context_generator_class(self.n_features, self.confidence, rewards_per_feature,
+                                                             pulled_arms_per_feature, self.bandit_class,
+                                                             **self.bandit_kwargs)
+            self.context_structure_tree, self.context_structure = context_generator.get_context_structure(
+                self.context_structure_tree)
 
             # Generate bandits
             self.min_context_to_bandit_dict = {}
