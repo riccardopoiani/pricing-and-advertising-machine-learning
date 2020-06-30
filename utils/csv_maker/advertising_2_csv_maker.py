@@ -6,12 +6,11 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from advertising.data_structure.Campaign import Campaign
-from advertising.optimizers.CampaignOptimizer import CampaignOptimizer
-
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../../")
 
+from advertising.data_structure.Campaign import Campaign
+from advertising.optimizers.CampaignOptimizer import CampaignOptimizer
 from environments.Settings.EnvironmentManager import EnvironmentManager
 from environments.Settings.Scenario import Scenario
 from utils.folder_management import handle_folder_creation
@@ -29,10 +28,9 @@ ADS_PLOT_N_POINTS = 100
 MIN_PRICE = 15
 MAX_PRICE = 25
 FIXED_COST = 12
-REWARD_FILE_LIST = ["../../report/project_point_2/Apr17_17-09-39/reward_GPBandit.pkl",
-                    "../../report/project_point_2/Apr24_14-15-39/reward_GaussianBandit.pkl"]
+REWARD_FILE_LIST = ["../../report/project_point_2/Jun30_09-05-01/reward_GPBandit.pkl",
+                    "../../report/project_point_2/Jun30_09-19-33/reward_GaussianBandit.pkl"]
 
-#BANDIT_NAME = ["GPBandit"]
 BANDIT_NAME = ["GPBandit", "GaussianBandit"]
 
 n_bandit = len(BANDIT_NAME)
