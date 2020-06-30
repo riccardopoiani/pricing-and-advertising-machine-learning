@@ -8,11 +8,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed
 
-from bandit.joint.JointBanditDiscriminatoryImproved import JointBanditDiscriminatoryImproved
-
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
+from bandit.joint.JointBanditDiscriminatoryImproved import JointBanditDiscriminatoryImproved
 from bandit.joint.AdValueStrategy import QuantileAdValueStrategy, ExpectationAdValueStrategy
 from bandit.joint.JointBanditFixedDailyPriceQuantile import JointBanditFixedDailyPriceQuantile
 from bandit.joint.JointBanditFixedDailyPriceTS import JointBanditFixedDailyPriceTS
@@ -24,12 +23,12 @@ from advertising.regressors.DiscreteRegressor import DiscreteRegressor
 from environments.GeneralEnvironment import PricingAdvertisingJointEnvironment
 from environments.Settings.EnvironmentManager import EnvironmentManager
 from utils.folder_management import handle_folder_creation
-from utils.experiments_helper import build_combinatorial_bandit, build_discrete_bandit, get_bandit_class_and_kwargs
+from utils.experiments_helper import build_combinatorial_bandit, get_bandit_class_and_kwargs
 from bandit.joint.IJointBandit import IJointBandit
 
 # Basic default settings
 N_DAYS = 50
-BASIC_OUTPUT_FOLDER = "../report/project_point_6_7/"
+BASIC_OUTPUT_FOLDER = "../report/project_point_7/change_std/500"
 
 # Scenario
 SCENARIO_NAME = "linear_scenario"  # corresponds to the name of the file in "resources"
@@ -121,7 +120,7 @@ def get_arguments():
 
     # Store results
     parser.add_argument("-s", "--save_result", help="Whether to store results or not", type=lambda x: int(x) != 0,
-                        default=0)
+                        default=1)
     parser.add_argument("-o", "--output_folder", default=BASIC_OUTPUT_FOLDER, help="Basic folder where"
                                                                                    "to store the output",
                         type=str)

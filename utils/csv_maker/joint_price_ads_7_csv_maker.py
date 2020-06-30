@@ -19,8 +19,8 @@ from utils.stats.StochasticFunction import IStochasticFunction
 CSV_REWARD = True
 CSV_REGRET = True
 
-SCENARIO_NAME = "linear_scenario"
-FOLDER_RESULT = "../../report/csv/point_7/{}/".format(SCENARIO_NAME)
+SCENARIO_NAME = "linear_scenario_std_500"
+FOLDER_RESULT = "../../report/csv/point_7/std500/{}/".format(SCENARIO_NAME)
 
 N_ARMS_PRICE = 11
 N_ARMS_ADS = 11
@@ -29,13 +29,9 @@ MIN_PRICE = 15
 MAX_PRICE = 25
 FIXED_COST = 12
 
-REWARD_FILE_LIST = ["../../report/project_point_6_7/Apr18_11-17-53/total_reward_JBFTS.pkl",
-                    "../../report/project_point_6_7/Apr18_14-41-22/total_reward_JBBQ.pkl",
-                    "../../report/project_point_6_7/Apr18_16-35-04/total_reward_JBBExp.pkl",
-                    "../../report/project_point_6_7/Apr18_17-10-06/total_reward_JBBQ.pkl",
-                    "../../report/project_point_6_7/Apr18_17-35-16/total_reward_JBBExp.pkl"]
-
-BANDIT_NAME = ["JBFTS", "JBBQ", "JBBExp", "JBBQD", "JBBExpD"]
+REWARD_FILE_LIST = ["../../report/project_point_7/change_std/500Jun28_15-10-23/total_reward_JBFTS.pkl",
+                    "../../report/project_point_7/change_std/500Jun28_15-25-20/total_reward_JBBQ.pkl"]
+BANDIT_NAME = ["JBFTS", "JBBQ"]
 
 n_bandit = len(BANDIT_NAME)
 _, folder_path_with_date = handle_folder_creation(result_path=FOLDER_RESULT, retrieve_text_file=False)
@@ -74,6 +70,11 @@ for price_idx, price in enumerate(prices_arr):
                              for b in np.linspace(0, DAILY_BUDGET, N_ARMS_ADS)])
         click_value = crp_function_list[i].draw_sample(price) * (price - FIXED_COST)
         values: np.array = n_clicks * click_value
+        if i == 2:
+            print(n_clicks)
+            print(click_value)
+            print(values)
+            print("\n")
         campaign.set_sub_campaign_values(i, values)
     curr_value, curr_budgets = CampaignOptimizer.find_best_budgets(campaign)
 

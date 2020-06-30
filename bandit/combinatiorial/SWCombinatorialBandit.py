@@ -52,5 +52,4 @@ class SWCombinatorialBandit(CombinatorialBandit):
             self.campaign.set_sub_campaign_values(sub_index, sub_campaign_values)
 
     def get_optimal_arm(self) -> int:
-        # TODO
-        pass
+        raise NotImplementedError("Not implemented")

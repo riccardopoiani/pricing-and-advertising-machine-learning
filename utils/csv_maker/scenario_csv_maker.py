@@ -18,7 +18,7 @@ from utils.stats.StochasticFunction import IStochasticFunction
 Script for generating CSV files to create latex plots concerning scenarios
 """
 
-SCENARIO_NAME = "linear_non_stationary_scenario"
+SCENARIO_NAME = "linear_visit_tanh_price"
 FOLDER_RESULT = "../../report/csv/{}/".format(SCENARIO_NAME)
 PLOT_INTERVAL = 3
 PRICE_PLOT_N_POINTS = 100

@@ -95,10 +95,7 @@ class CDCombinatorialBandit(CombinatorialBandit):
         if campaign_mask.any():
             campaign_mask = np.ones(shape=self.campaign.get_n_sub_campaigns(), dtype=bool)
 
-        # print(campaign_mask.any())
-        # print(self.t)
         return campaign_mask
 
     def get_optimal_arm(self) -> int:
-        # TODO
-        pass
+        raise NotImplementedError("Not implemented")
