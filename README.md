@@ -1,4 +1,4 @@
-# Data Intelligence Application - 2019 
+# Data Intelligence Application - 2019/2020
 Group members:
 - Alessandrelli Luca
 - Gargano Jacopo
