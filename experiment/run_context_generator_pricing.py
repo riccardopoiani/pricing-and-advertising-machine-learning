@@ -28,7 +28,7 @@ CONTEXT_GENERATION_NAME = "GCG"
 BASIC_OUTPUT_FOLDER = "../report/project_point_5/"
 
 # Pricing settings
-SCENARIO_NAME = "one_class_scenario"  # corresponds to the name of the file in "resources"
+SCENARIO_NAME = "linear_visit_tanh_price"  # corresponds to the name of the file in "resources"
 MIN_PRICE = 15
 MAX_PRICE = 25
 N_ARMS = 11
@@ -205,7 +205,8 @@ if args.save_result:
     fd.write("Horizon in days: {}\n".format(args.n_days))
     fd.write("Confidence: {}\n".format(args.confidence))
 
-    fd.write("Bandit algorithm: {}\n\n".format(args.bandit_name))
+    fd.write("Bandit algorithm: {}\n".format(args.bandit_name))
+    fd.write("Context generation algorithm: {}\n\n".format(args.context_gen_name))
     fd.write("Scenario name {}\n".format(args.scenario_name))
 
     fd.write("Discretization type {}\n\n".format(args.discretization))
