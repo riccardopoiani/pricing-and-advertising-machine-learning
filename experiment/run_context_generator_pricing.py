@@ -8,13 +8,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed
 
-from bandit.context.BruteforceContextGenerator import BruteforceContextGenerator
-from bandit.context.ContextualBandit import ContextualBandit
-from bandit.context.GreedyContextGenerator import GreedyContextGenerator
-
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 sys.path.append("../")
 
+from bandit.context.BruteforceContextGenerator import BruteforceContextGenerator
+from bandit.context.ContextualBandit import ContextualBandit
+from bandit.context.GreedyContextGenerator import GreedyContextGenerator
 from utils.experiments_helper import get_bandit_class_and_kwargs
 from environments.GeneralEnvironment import PricingAdvertisingJointEnvironment
 from environments.Settings.EnvironmentManager import EnvironmentManager

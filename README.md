@@ -13,7 +13,7 @@ All experiments are in folder /experiment. Each of them generates files (that ca
 with pickle) containing the results of the experiment and a txt file containing details on the setting
 of the experiment. <br>
 To run an experiment, one can simply write "python exp_name.py -n_runs x -s 1": this will launch x runs 
-for a given experiment and will save results on file. 
+for a given experiment and will save results on file (notice that it is necessary to run it from the folder /experiment).
 Additional parameters can be set to control the environment parameters and algorithm hyper-parameters (--help 
 to see details on each of this additional possibility). <br> <br>
 
