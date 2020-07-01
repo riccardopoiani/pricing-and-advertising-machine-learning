@@ -2,12 +2,9 @@ import itertools
 from typing import Optional, List, Tuple
 
 import numpy as np
-import pandas as pd
-import os
 
 from bandit.context.AbstractContextGenerator import AbstractContextGenerator, Node
 from bandit.discrete.DiscreteBandit import DiscreteBandit
-from utils.folder_management import get_resource_folder_path
 
 
 def generate_partition(collection):
@@ -25,6 +22,9 @@ def generate_partition(collection):
 
 
 class BruteforceContextGenerator(AbstractContextGenerator):
+    """
+    A simple context generator that compares all possible partitions and select the one with the highest value
+    """
 
     def get_context_structure(self, old_cst_root: Node) -> (Optional[Node], List[List[Tuple]]):
         """
