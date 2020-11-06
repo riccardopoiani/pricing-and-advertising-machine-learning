@@ -1,11 +1,4 @@
-# Data Intelligence Application - 2019/2020
-Group members:
-- Alessandrelli Luca
-- Gargano Jacopo
-- Poiani Riccardo
-- Zhou Tang-Tang
-
-Chosen topic: Pricing + Advertising
+# Machine learning techniques for pricing and advertising
 
 ## Content highlights
 Implementation and experiments on machine learning techinques for pricing and advertising are available within this repository. "dia_report.pdf" contains details on the purpose and the content of the repository; together with results obtained in simulated domains. Here, we provide a list of what the repository contains:
