@@ -7,6 +7,14 @@ Group members:
 
 Chosen topic: Pricing + Advertising
 
+## Content highlights
+Implementation and experiments on machine learning techinques for pricing and advertising are available within this repository. "dia_report.pdf" contains details on the purpose and the content of the repository; together with results obtained in simulated domains. Here, we provide a list of what the repository contains:
+- Multi-armed bandit techniques for pricing: Thomposon sampling, EXP-3, UCB-1, and UCB extensions that exploit reasonable hypothesis regarding the pricing problem
+- Non-stationary multi-armed bandit techinques (both change point detection and sliding windows) for non-stationary environments 
+- Contextual multi-armed bandit technique: greedy-context generation algorithm
+- Dynamic-programming for campaing budget optimization algorithm together with Gaussian Processes estimators, to solve advertising problems
+- Approaches for solving a contextual joint problem of pricing with advertising
+
 ## Instructions
 In requirements it is possible to find the necessary dependencies to run the project. <br> <br>
 All experiments are in folder /experiment. Each of them generates files (that can be read, for instance, 
